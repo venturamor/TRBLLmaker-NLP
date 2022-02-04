@@ -53,6 +53,11 @@ def get_genre(genre, db_pickle_path=None, page=1):
 
         page = res['next_page']
 
+    # final save
+    songs_info_db.save_to_pickle()
+    print('# songs in db:', str(songs_info_db.get_len()))
+    print('current page:', str(page))
+    print('Done: extracting', genre, 'songs :)')
 
 if __name__ == '__main__':
     genre = 'pop'
