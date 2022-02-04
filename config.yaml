@@ -1,0 +1,29 @@
+data_extraction:
+  token: 'hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X'
+  pickles_parent_dir: './db_pickles'
+  save_songs_db_every: 200
+  genres:
+  - 'country'
+  - 'pop'
+  - 'r&b'
+  - 'rap'
+  - 'rock'
+
+#dataset:
+#    # General Paths
+#    csv_path: '.\imagenette\noisy_imagenette.csv'
+#    data_path: '.\imagenette'
+#    noisy_labels_x: 'noisy_labels_0'
+#    moco_classifier_frac: 0.7   # moco dataset part over classifier part for training
+#    test_frac: 0.3
+#
+#Vanilla_model:
+#    num_epochs: 1000
+#    val_step: 5
+#    save_every: 5
+#    log_path: '.\logs_vanilla_model'
+#    resume_run: 0
+#    num_classes: 10
+#    temperature: 0.07
+#    momentum: 0.99999
+#    feat_dim: 128

@@ -1,4 +1,4 @@
-### Get into TRBL - ReadMe
+### TRBLLmaker - ReadMe
 
 ######  Genius API:
 - API client created by https:
@@ -18,5 +18,6 @@ hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X
     - https://docs.genius.com/#/getting-started-h1
     - https://ewenme.github.io/geniusr/articles/geniusr.html
     - https://pypi.org/project/lyricsgenius/
+    - https://github.com/ArinkB/Predicting-Song-Skips/blob/master/1_Data%20Acquisition.ipynb
     
     
