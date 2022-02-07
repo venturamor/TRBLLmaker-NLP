@@ -5,6 +5,7 @@ from songs_db import SongsInfoDB
 import datetime
 from os.path import join
 from requests.exceptions import Timeout, ConnectionError
+import chosen_artists
 
 
 def get_genre(genre, db_pickle_path=None, page=1):
@@ -79,7 +80,7 @@ def all_genres_extraction(config_args):
     secondary tags (hundreds...) - https://genius.com/Genius-tags-music-genres-international-annotated
     :return:
     """
-    genres = config_args['data_extraction']['genres'][:-1]  # without final
+    genres = config_args['data_extraction']['genres'][:-2]  # without final
     for genre in genres:
         get_genre(genre)
 
@@ -97,20 +98,86 @@ def genre_from_last_point(last_file, genre, page):
     get_genre(genre, db_pickle_path_2_load, page=page)
 
 
+def get_songs_by_artists(chosen_artists, db_pickle_path=None, page=1):
+    """
+    the genre is artists. no specified genre for each song.
+    :param chosen_artist:
+    :param db_pickle_path:
+    :param page:
+    :return:
+    """
+    token = config_args['data_extraction']['token']
+    max_songs_per_artist = config_args['data_extraction']['max_songs_per_artist']
+    save_every = config_args['data_extraction']['save_songs_db_every']
+    genre = 'artists'
+    genius = lyricsgenius.Genius(token)
+    # in order to handle with timeouts
+    genius.timeout = 10
+    genius.sleep_time = 2
+    genius.retries = 2
+    retries_num = 2
+
+    for ch_artist in chosen_artists:
+        name_by_date = ch_artist + '_' + datetime.datetime.today().strftime('%d%m%y_%H%M')   # _%H%M')
+        songs_info_db = SongsInfoDB(name=name_by_date, genre=genre, pickle_path=db_pickle_path)
+        artist = genius.search_artist(ch_artist, max_songs=max_songs_per_artist)
+        if artist == None:
+            print('Warning: The artist:', ch_artist, 'was not found.')
+            continue
+        if len(artist.songs) < 3:  # not enough songs -> no worthy
+            continue
+
+        for song in artist.songs:
+            retries = 0
+            while retries < retries_num:
+                try:
+                    annotation = genius.song_annotations(song.id)
+                    song_info = SongInfo(genre, song, annotation)
+                    songs_info_db.add_song(song_info)
+                    # save every # songs to pickle
+                    if songs_info_db.get_len() % save_every == 0:
+                        songs_info_db.save_to_pickle(pi_name=ch_artist)
+                        print('# songs in db:', str(songs_info_db.get_len()))
+                    break  # break to next hit
+
+                except TimeoutError as e:
+                    retries += 1
+                    continue
+                except ConnectionError as e:
+                    retries += 1
+                    songs_info_db.save_to_pickle(pi_name=ch_artist)
+                    print('# songs in db:', str(songs_info_db.get_len()))
+                    continue
+
+
+        # save when finish artists songs
+        songs_info_db.save_to_pickle(pi_name=ch_artist)
+        print('# songs in db:', str(songs_info_db.get_len()))
+        continue
+
+    # final save
+    songs_info_db.save_to_pickle(pi_name=ch_artist)
+    print('# songs in db:', str(songs_info_db.get_len()))
+    print('Done: extracting', genre, 'songs :)')
+    print('Done')
+
+
 if __name__ == '__main__':
-    # one genre extraction
-    genre = 'country'
-    get_genre(genre)
-
-    # genre from last checkpoint
-    last_file = 'rap_050222_1022.pickle'
-    page = 43
-    genre_from_last_point(last_file, genre, page)
-
-    # all genres extraction
-    all_genres_extraction(config_args)
-
-
+    # # one genre extraction
+    # genre = 'country'
+    # get_genre(genre)
+    #
+    # # genre from last checkpoint
+    # last_file = 'rap_050222_1022.pickle'
+    # page = 43
+    # genre_from_last_point(last_file, genre, page)
+    #
+    # # all genres extraction
+    # all_genres_extraction(config_args)
+    #
+    # by artists
+    chosen_artists = chosen_artists.chosen_artists
+    get_songs_by_artists(chosen_artists, db_pickle_path=None, page=1)
 
 
 # default search by title: A-Z/ pageviews / release date

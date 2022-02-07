@@ -1,7 +1,8 @@
 data_extraction:
   token: 'hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X'
   pickles_parent_dir: './db_pickles'
-  save_songs_db_every: 100
+  save_songs_db_every: 20 #100
+  max_songs_per_artist: 100
   genres:
   - 'country'
   - 'pop'
@@ -9,6 +10,8 @@ data_extraction:
   - 'rock'
   - 'r-b'
   - 'final'
+  - 'artists'
+
 
 
 #Vanilla_model:

@@ -12,7 +12,7 @@ def combine_all_gernres(config_args, with_annot=0):
     and only if it has annotations
     :return:
     """
-    genres = config_args['data_extraction']['genres'][:-1]
+    genres = config_args['data_extraction']['genres'][:-2]
     pickles_dir = config_args['data_extraction']['pickles_parent_dir']
     all_songs_db = SongsInfoDB(name='all_songs_db', genre='final')
     file_type = '\*pickle'

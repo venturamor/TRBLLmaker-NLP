@@ -46,13 +46,17 @@ class SongsInfoDB:
             self.genre = db_from_pickle.genre  # take the type from loaded
         del db_from_pickle
 
-    def save_to_pickle(self):
+    def save_to_pickle(self, pi_name=None):
         """
         save current db to a pickle
         """
+        if pi_name == None:
+            pi_name = self.genre
+        else:
+            pi_name = pi_name
         pickle_ext = '.pickle'
         # pickle_name = self.name + pickle_ext
-        pickle_name = self.genre + '_' + datetime.datetime.today().strftime('%d%m%y_%H%M') + pickle_ext
+        pickle_name = pi_name + '_' + datetime.datetime.today().strftime('%d%m%y_%H%M') + pickle_ext
         print('pickling ', self.name,  'to: ', pickle_name)
         # create pickles dir if not exists
         pickles_subdir = join(self.pickles_parent_dir, self.genre)
