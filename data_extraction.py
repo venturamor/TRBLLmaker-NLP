@@ -4,12 +4,19 @@ from song_info import SongInfo
 from songs_db import SongsInfoDB
 import datetime
 from os.path import join
-from requests.exceptions import Timeout
+from requests.exceptions import Timeout, ConnectionError
 
 
 def get_genre(genre, db_pickle_path=None, page=1):
+    """
+    gets the lyrics + metadata + annotations of all the songs that have the requested genre tag.
+    takes ~0.5 min per song with the following setup.
+    :param genre:
+    :param db_pickle_path:
+    :param page: number
+    :return: save pickle
+    """
     # # genre
-    # this gets the lyrics of all the songs that have the pop tag.
     # per song: full title, url, id, annotation_count, lyrics, (verses, annotations), metadata (genre, artists, album...)
     token = config_args['data_extraction']['token']
     save_every = config_args['data_extraction']['save_songs_db_every']
@@ -50,24 +57,60 @@ def get_genre(genre, db_pickle_path=None, page=1):
                     except TimeoutError as e:
                         retries += 1
                         continue
+                    except ConnectionError as e:
+                        retries += 1
+                        songs_info_db.save_to_pickle()
+                        print('# songs in db:', str(songs_info_db.get_len()))
+                        print('ConnectionError: current page:', str(page))
+                        continue
 
         page = res['next_page']
 
     # final save
     songs_info_db.save_to_pickle()
     print('# songs in db:', str(songs_info_db.get_len()))
-    print('current page:', str(page))
     print('Done: extracting', genre, 'songs :)')
+    print('Done')
 
-if __name__ == '__main__':
-    genre = 'pop'
-    last_file = 'pop_040222_1555.pickle'
+
+def all_genres_extraction(config_args):
+    """
+    main Genius tags - ['country', 'pop', 'r&b', 'rap', 'rock']
+    secondary tags (hundreds...) - https://genius.com/Genius-tags-music-genres-international-annotated
+    :return:
+    """
+    genres = config_args['data_extraction']['genres'][:-1]  # without final
+    for genre in genres:
+        get_genre(genre)
+
+
+def genre_from_last_point(last_file, genre, page):
+    """
+
+    :param last_file:
+    :param genre:
+    :param page:
+    :return:
+    """
+
     db_pickle_path_2_load = join(config_args['data_extraction']['pickles_parent_dir'], genre, last_file)
-    page = 31
     get_genre(genre, db_pickle_path_2_load, page=page)
 
-# main Genius tags - ['country', 'pop', 'r&b', 'rap', 'rock']
-# secondary tags (hundreds...) - https://genius.com/Genius-tags-music-genres-international-annotated
+
+if __name__ == '__main__':
+    # one genre extraction
+    genre = 'country'
+    get_genre(genre)
+
+    # genre from last checkpoint
+    last_file = 'rap_050222_1022.pickle'
+    page = 43
+    genre_from_last_point(last_file, genre, page)
+
+    # all genres extraction
+    all_genres_extraction(config_args)
+
+
 
 
 # default search by title: A-Z/ pageviews / release date
