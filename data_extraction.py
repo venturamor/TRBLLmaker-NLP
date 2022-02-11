@@ -112,9 +112,9 @@ def get_songs_by_artists(chosen_artists, db_pickle_path=None, page=1):
     genre = 'artists'
     genius = lyricsgenius.Genius(token)
     # in order to handle with timeouts
-    genius.timeout = 10
-    genius.sleep_time = 2
-    genius.retries = 2
+    genius.timeout = 12
+    genius.sleep_time = 3
+    genius.retries = 3
     retries_num = 2
 
     for ch_artist in chosen_artists:
@@ -135,9 +135,9 @@ def get_songs_by_artists(chosen_artists, db_pickle_path=None, page=1):
                     song_info = SongInfo(genre, song, annotation)
                     songs_info_db.add_song(song_info)
                     # save every # songs to pickle
-                    if songs_info_db.get_len() % save_every == 0:
-                        songs_info_db.save_to_pickle(pi_name=ch_artist)
-                        print('# songs in db:', str(songs_info_db.get_len()))
+                    # if songs_info_db.get_len() % save_every == 0:
+                    #     songs_info_db.save_to_pickle(pi_name=ch_artist)
+                    #     print('# songs in db:', str(songs_info_db.get_len()))
                     break  # break to next hit
 
                 except TimeoutError as e:
