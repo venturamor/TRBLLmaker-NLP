@@ -127,3 +127,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+*.pickle
+*.json
+.idea/deployment.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/TRBLLmaker-NLP.iml
+.idea/vcs.xml
+*.py
+chosen_artists.py
+chosen_artists.py
+chosen_artists.py
+chosen_artists.py
