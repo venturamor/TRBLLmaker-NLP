@@ -1,26 +1,21 @@
 chosen_artists = [
-                  'FINNEAS',
-                  'Rachel Platten', 'Sia', 'Muse', 'Maroon 5', 'Christina Perri',
-                  'Lorde', 'Jennifer Lopez', 'Cardi B',
-                  'Major Lazer', 'Imagine Dragons', 'Birdy',
-                  'John Newman', 'Bruno Mars',
-                  'P!nk', 'Lana Del Rey', 'Gorillaz', 'Mumford & Sons',
-                  'Billie Eilish', 'Ariana Grande', 'Megan Thee Stallion',
-                  'Doja Cat', 'Halsey', 'Rick Astley', 'Shawn Mendes',
+                  'Halsey', 'Rick Astley', 'Shawn Mendes',
                   'Justin Bieber', '24kGoldn', 'Katy Perry', 'Iggy Azalea',
                   'Matchbox Twenty', 'Uncle Kracker',
                   'Rage Against the Machine', 'The Proclaimers',
                   'Future', 'AWOLNATION', 'Weezer', 'MGMT',
-                  'twenty one pilots', 'The Prodigy', 'Missy Elliott', 'Eve',
-                  'The Presidents of the United States of America', 'Meek Mill',
-                  'Drake', 'Macklemore', '21 Savage',
-                  'T-Pain', 'Ellie Goulding', 'Tenacious D', 'Sublime',
-                  '2Pac', 'Colbie Caillat', 'Flo Rida',
-                  'Gucci Mane', 'Young Money', 'Migos', 'Yo Gotti', 'G-Eazy',
-                  'Foo Fighters', 'Kehlani', 'Princess Nokia', 'French Montana',
-                  'Backstreet Boys', 'Spice Girls', 'Soulja Boy', 'ZAYN',
-                  'Travis Scott', 'Sam Smith', 'DJ Khaled', 'Pharrell Williams',
-                  'Stone Temple Pilots', 'Clean Bandit', 'Taylor Swift']
+                  #  Michael downloads the following:
+                  # 'twenty one pilots', 'The Prodigy', 'Missy Elliott', 'Eve',
+                  # 'The Presidents of the United States of America', 'Meek Mill',
+                  # 'Drake', 'Macklemore', '21 Savage',
+                  # 'T-Pain', 'Ellie Goulding', 'Tenacious D', 'Sublime',
+                  # '2Pac', 'Colbie Caillat', 'Flo Rida',
+                  # 'Gucci Mane', 'Young Money', 'Migos', 'Yo Gotti', 'G-Eazy',
+                  # 'Foo Fighters', 'Kehlani', 'Princess Nokia', 'French Montana',
+                  # 'Backstreet Boys', 'Spice Girls', 'Soulja Boy', 'ZAYN',
+                  # 'Travis Scott', 'Sam Smith', 'DJ Khaled', 'Pharrell Williams',
+                  # 'Stone Temple Pilots', 'Clean Bandit', 'Taylor Swift'
+                ]
 
 # 'OneRepublic', 'Elvis', 'Lola Marsh - לולה מארש',
 #                   'Lizzo', 'alt-J', 'Hozier', 'The Vaccines',
@@ -43,7 +38,13 @@ chosen_artists = [
 #                     'Nicki Minaj',
 #                     'Britney Spears', 'Lady Gaga', 'Shakira', 'Ludacris','Akon',
 #                     'Dua Lipa', 'The Weeknd',Miley Cyrus', 'Logic',
-
+#                     'Rachel Platten', 'Sia', 'Muse', 'Maroon 5', 'Christina Perri',
+#                     'Lorde', 'Jennifer Lopez', 'Cardi B',
+#                     'Major Lazer', 'Imagine Dragons', 'Birdy',
+#                     'John Newman', 'Bruno Mars',
+#                     'P!nk', 'Lana Del Rey', 'Gorillaz', 'Mumford & Sons',
+#                     'Billie Eilish', 'Ariana Grande', 'Megan Thee Stallion',
+#                     'Doja Cat',
 
 # check for duplicates
 # set([x for x in chosen_artists if chosen_artists.count(x) > 1])
