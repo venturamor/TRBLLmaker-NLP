@@ -4,6 +4,7 @@ from song_info import SongInfo
 from songs_db import SongsInfoDB
 import datetime
 from os.path import join
+from os import listdir, walk, makedirs
 from requests.exceptions import Timeout, ConnectionError
 import chosen_artists
 

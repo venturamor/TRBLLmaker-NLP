@@ -20,4 +20,9 @@ hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X
     - https://pypi.org/project/lyricsgenius/
     - https://github.com/ArinkB/Predicting-Song-Skips/blob/master/1_Data%20Acquisition.ipynb
     
-    
+######  Data Extraction and preparation:
+- [data_extraction](data_extraction.py) - extract songs data and metadata using genius API, 
+  by genre and by artists [chosen_artists](chosen_artists.py). saved in pickles (db_pickles/artist or db_pickles/genre)
+- [data_arrangement](data_arrangement.py) - gather all extracted data to uniq set (db_pickles/final)
+- [prepare_data](prepare_data.py) - organize data in dataframe format (./jsons), 
+  and split it to train, test and validation (./data)
