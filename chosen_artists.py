@@ -1,9 +1,5 @@
 chosen_artists = [
-                  'Halsey', 'Rick Astley', 'Shawn Mendes',
-                  'Justin Bieber', '24kGoldn', 'Katy Perry', 'Iggy Azalea',
-                  'Matchbox Twenty', 'Uncle Kracker',
-                  'Rage Against the Machine', 'The Proclaimers',
-                  'Future', 'AWOLNATION', 'Weezer', 'MGMT',
+
                   #  Michael downloads the following:
                   # 'twenty one pilots', 'The Prodigy', 'Missy Elliott', 'Eve',
                   # 'The Presidents of the United States of America', 'Meek Mill',
@@ -44,7 +40,11 @@ chosen_artists = [
 #                     'John Newman', 'Bruno Mars',
 #                     'P!nk', 'Lana Del Rey', 'Gorillaz', 'Mumford & Sons',
 #                     'Billie Eilish', 'Ariana Grande', 'Megan Thee Stallion',
-#                     'Doja Cat',
+#                     'Doja Cat', 'Halsey', 'Rick Astley', 'Shawn Mendes',
+#                   'Justin Bieber', '24kGoldn', 'Katy Perry', 'Iggy Azalea',
+#                   'Matchbox Twenty', 'Uncle Kracker',
+#                   'Rage Against the Machine', 'The Proclaimers',
+#                   'Future', 'AWOLNATION', 'Weezer', 'MGMT',
 
 # check for duplicates
 # set([x for x in chosen_artists if chosen_artists.count(x) > 1])
