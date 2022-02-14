@@ -1,16 +1,11 @@
 chosen_artists = [
-
                   #  Michael downloads the following:
-                  # 'twenty one pilots', 'The Prodigy', 'Missy Elliott', 'Eve',
-                  # 'The Presidents of the United States of America', 'Meek Mill',
-                  # 'Drake', 'Macklemore', '21 Savage',
-                  # 'T-Pain', 'Ellie Goulding', 'Tenacious D', 'Sublime',
-                  # '2Pac', 'Colbie Caillat', 'Flo Rida',
-                  # 'Gucci Mane', 'Young Money', 'Migos', 'Yo Gotti', 'G-Eazy',
-                  # 'Foo Fighters', 'Kehlani', 'Princess Nokia', 'French Montana',
-                  # 'Backstreet Boys', 'Spice Girls', 'Soulja Boy', 'ZAYN',
-                  # 'Travis Scott', 'Sam Smith', 'DJ Khaled', 'Pharrell Williams',
-                  # 'Stone Temple Pilots', 'Clean Bandit', 'Taylor Swift'
+                  '2Pac', 'Colbie Caillat', 'Flo Rida',
+                  'Gucci Mane', 'Young Money', 'Migos', 'Yo Gotti', 'G-Eazy',
+                  'Foo Fighters', 'Kehlani', 'Princess Nokia', 'French Montana',
+                  'Backstreet Boys', 'Spice Girls', 'Soulja Boy', 'ZAYN',
+                  'Travis Scott', 'Sam Smith', 'DJ Khaled', 'Pharrell Williams',
+                  'Stone Temple Pilots', 'Clean Bandit', 'Taylor Swift'
                 ]
 
 # 'OneRepublic', 'Elvis', 'Lola Marsh - לולה מארש',
@@ -45,6 +40,10 @@ chosen_artists = [
 #                   'Matchbox Twenty', 'Uncle Kracker',
 #                   'Rage Against the Machine', 'The Proclaimers',
 #                   'Future', 'AWOLNATION', 'Weezer', 'MGMT',
+                  # 'twenty one pilots', 'The Prodigy', 'Missy Elliott', 'Eve',
+                  # 'The Presidents of the United States of America', 'Meek Mill',
+                  # 'Drake', 'Macklemore', '21 Savage',
+                  # 'T-Pain', 'Ellie Goulding', 'Tenacious D', 'Sublime',
 
 # check for duplicates
 # set([x for x in chosen_artists if chosen_artists.count(x) > 1])
