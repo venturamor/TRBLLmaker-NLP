@@ -1,11 +1,11 @@
 chosen_artists = [
-                  #  Michael downloads the following:
-                  '2Pac', 'Colbie Caillat', 'Flo Rida',
-                  'Gucci Mane', 'Young Money', 'Migos', 'Yo Gotti', 'G-Eazy',
-                  'Foo Fighters', 'Kehlani', 'Princess Nokia', 'French Montana',
                   'Backstreet Boys', 'Spice Girls', 'Soulja Boy', 'ZAYN',
                   'Travis Scott', 'Sam Smith', 'DJ Khaled', 'Pharrell Williams',
                   'Stone Temple Pilots', 'Clean Bandit', 'Taylor Swift'
+                  #  Michael downloads the following:
+                  # '2Pac', 'Colbie Caillat', 'Flo Rida',
+                  # 'Gucci Mane', 'Young Money', 'Migos', 'Yo Gotti', 'G-Eazy',
+                  # 'Foo Fighters', 'Kehlani', 'Princess Nokia', 'French Montana',
                 ]
 
 # 'OneRepublic', 'Elvis', 'Lola Marsh - לולה מארש',

@@ -16,8 +16,10 @@
 """This is a dataset of songs created for TRBLLmaker"""
 
 import os
+from os.path import join
 import datasets
 import pandas as pd
+import datasets
 from config_parser import config_args
 from datasets import ClassLabel, Value
 
@@ -44,7 +46,7 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(name="trbll_dataset", version=VERSION, description="TRBLL dataset"),
     ]
 
-    DEFAULT_CONFIG_NAME = "TRBLL_dataset"  # It's not mandatory to have a default configuration. Just use one if it make sense.
+    DEFAULT_CONFIG_NAME = "trbll_dataset"  # It's not mandatory to have a default configuration. Just use one if it make sense.
 
     def _info(self):
         features = datasets.Features(
@@ -103,14 +105,15 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
         df = pd.read_json(filepath)
         for index, row in df.iterrows():
             yield index, {
-                "data": row['data'],
-                "labels": row['labels'],
+                "data": list(row['text']),
+                "labels": list(row['annotation']),
             }
 
 
 if __name__ == '__main__':
     # https: // huggingface.co / docs / datasets / processing.html
-    samples_dataset = TRBLLDataset()
+    samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
+
     new_features = samples_dataset.features.copy()
     new_features["label"] = ClassLabel(names=[''])
     samples_dataset = samples_dataset.cast(new_features)
