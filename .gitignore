@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 *.pickle
 config.yaml
+*.json
+*.xml
+.idea/TRBLLmaker-NLP.iml
