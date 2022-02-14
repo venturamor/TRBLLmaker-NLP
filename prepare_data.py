@@ -102,17 +102,18 @@ def split_by_songs(songs_json_path, samples_json_path):
     if not exists(data_dir):
         makedirs(data_dir)
 
-    dirs = ['songs', 'samples']
+    str_parts = config_args['train_args']['type']
+    dirs = config_args['train_args']['data_type']
     for dir in dirs:
         if not exists(join(data_dir, dir)):
             makedirs(dir)
+
     songs = [train_songs, test_songs, validation_songs]
     samps = [train_samps, test_samps, validation_samps]
-    str_parts = ['train_', 'test_', 'validation_']
     for idx in range(len(songs)):
 
-        songs[idx].to_json(join(data_dir, str_parts[idx] + 'songs' + '.json'))
-        samps[idx].to_json(join(data_dir, str_parts[idx] + 'samples' + '.json'))
+        songs[idx].to_json(join(data_dir, dirs[0], str_parts[idx] + '.json'))
+        samps[idx].to_json(join(data_dir, dirs[1], str_parts[idx] + '.json'))
 
     print('done')
 

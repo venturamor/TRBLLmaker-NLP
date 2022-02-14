@@ -22,6 +22,8 @@ import pandas as pd
 import datasets
 from config_parser import config_args
 from datasets import ClassLabel, Value
+import yaml
+import sys
 
 # You can copy an official description
 _DESCRIPTION = """\
@@ -72,29 +74,31 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
     def _split_generators(self, dl_manager):
 
         data_dir = config_args["train_args"]["data_dir"]
-
+        data_types = config_args["train_args"]["data_type"]
+        data_type = config_args["train_args"]["specific_type"]
         return [
             datasets.SplitGenerator(
                 name=datasets.Split.TRAIN,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, "train_samples.json"),
-                    "split": "train",
+                    "filepath": os.path.join(data_dir, data_types[data_type], "train.json"),
+                    "split": 'train',
                 },
             ),
             datasets.SplitGenerator(
                 name=datasets.Split.TEST,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, "test_samples.json"),
-                    "split": "test"
-                },
+                    "filepath": os.path.join(data_dir, data_types[data_type], "test.json"),
+                    "split": "test",
+
+        },
             ),
             datasets.SplitGenerator(
                 name=datasets.Split.VALIDATION,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, "validation_samples.json"),
+                    "filepath": os.path.join(data_dir,  data_types[data_type], "validation.json"),
                     "split": "validation",
                 },
             ),
@@ -103,19 +107,43 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
     # method parameters are unpacked from `gen_kwargs` as given in `_split_generators`
     def _generate_examples(self, filepath, split):
         df = pd.read_json(filepath)
+        data_col = config_args["train_args"]["data_col"]
+        label_col = config_args["train_args"]["label_col"]
         for index, row in df.iterrows():
+            # has to be list. list(row[]) -> list of chars
+            a = []
+            a.append(row[data_col])
+            b = []
+            b.append(row[label_col])
             yield index, {
-                "data": list(row['text']),
-                "labels": list(row['annotation']),
+                "data": a,
+                "labels": b,
             }
+
+
+def change_yml_for_dataset(config_args, specific_type: int, data_col: str, label_col: str):
+
+    new_config_args = config_args.copy()
+    new_config_args['train_args']['specific_type'] = specific_type
+    new_config_args['train_args']['data_col'] = data_col
+    new_config_args['train_args']['specific_type'] = label_col
+    file = open('config.yaml', "w")
+    yaml.dump(new_config_args, file)
+    file.close()
+    from config_parser import config_args
 
 
 if __name__ == '__main__':
     # https: // huggingface.co / docs / datasets / processing.html
+    # samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
+
+    # new_features = samples_dataset.features.copy()
+    # new_features["label"] = ClassLabel(names=[''])
+    # samples_dataset = samples_dataset.cast(new_features)
+
+    change_yml_for_dataset(config_args=config_args, specific_type=0,
+                           data_col='song_id', label_col='artist')
     samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
 
-    new_features = samples_dataset.features.copy()
-    new_features["label"] = ClassLabel(names=[''])
-    samples_dataset = samples_dataset.cast(new_features)
 
     print('done')
