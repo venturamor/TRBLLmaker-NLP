@@ -133,3 +133,5 @@ config.yaml
 *.xml
 .idea/TRBLLmaker-NLP.iml
 .idea/TRBLLmaker-NLP.iml
+*.docx
+*.zip
