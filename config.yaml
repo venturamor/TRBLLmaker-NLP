@@ -1,27 +1,27 @@
 data_extraction:
-  genres:
-  - country
-  - pop
-  - rap
-  - rock
-  - r-b
-  - final
-  - artists
-  jsons_dir: ./jsons
+  jsons_dir: './jsons'
+  pickles_parent_dir: './db_pickles'
+  token: 'hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X'
   max_songs_per_artist: 100
-  pickles_parent_dir: ./db_pickles
   save_songs_db_every: 20
-  token: hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X
+  genres:
+  - 'country'
+  - 'pop'
+  - 'rap'
+  - 'rock'
+  - 'r-b'
+  - 'final'
+  - 'artists'
 train_args:
-  data_col: song_id
-  data_dir: ./data
-  data_type:
-  - songs
-  - samples
-  label_col: artist
-  parts:
-  - train
-  - test
-  - validation
-  specific_type: artist
+  data_dir: './data'
+  data_col: 'song_id'
+  label_col: 'artist'
   test_size: 0.2
+  data_type:
+  - 'songs'
+  - 'samples'
+  specific_type: 0
+  parts:
+  - 'train'
+  - 'test'
+  - 'validation'

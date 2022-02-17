@@ -36,11 +36,15 @@ def pickle_2_dataframes(db_pickle_path):
     idx_annot = 0
     for idx, song in enumerate(songs_info_db.songs_list):
         #  songs_df
+        try:
+            pageviews = song.song_genius.stats.pageviews
+        except:
+            pageviews = None
         row_song = {'title': song.title, 'artist': song.song_genius.artist,
                     'song_id': song.song_genius.id, 'genre': song.genre,
                     'lyrics': song.song_genius.lyrics, 'lyrics_state': song.song_genius.lyrics_state,
                     'stat_hot': song.song_genius.stats.hot,
-                    'stat_pageviews': song.song_genius.stats.pageviews,
+                    'stat_pageviews': pageviews,
                     'url': song.song_genius.url, 'image_url': song.song_genius.header_image_url}
         songs_df = songs_df.append(pd.DataFrame(row_song, index=[idx]))
 
@@ -102,11 +106,11 @@ def split_by_songs(songs_json_path, samples_json_path):
     if not exists(data_dir):
         makedirs(data_dir)
 
-    str_parts = config_args['train_args']['type']
+    str_parts = config_args['train_args']['parts']
     dirs = config_args['train_args']['data_type']
     for dir in dirs:
         if not exists(join(data_dir, dir)):
-            makedirs(dir)
+            makedirs(join(data_dir, dir))
 
     songs = [train_songs, test_songs, validation_songs]
     samps = [train_samps, test_samps, validation_samps]
@@ -122,12 +126,13 @@ if __name__ == '__main__':
     # for creating train, test, validation data jsons
     pickle_dir = config_args["data_extraction"]["pickles_parent_dir"]
     genre = 'final'
-    pickle_name = 'final_070222_0951.pickle'
+    pickle_name = 'final_140222_2012.pickle'
     db_pickle_path = join(pickle_dir, genre, pickle_name)
     # pickle_2_dataframes(db_pickle_path)
+
     # split songs
-    json_song = 'songs_110222_1400.json'
-    json_samp = 'samples_110222_1400.json'
+    json_song = 'songs_140222_2040.json'
+    json_samp = 'samples_140222_2040.json'
     songs_json_path = join(config_args['data_extraction']['jsons_dir'], json_song)
     samples_json_path = join(config_args['data_extraction']['jsons_dir'], json_samp)
     split_by_songs(songs_json_path, samples_json_path)

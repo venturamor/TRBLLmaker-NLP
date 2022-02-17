@@ -112,9 +112,9 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
         for index, row in df.iterrows():
             # has to be list. list(row[]) -> list of chars
             a = []
-            a.append(row[data_col])
+            a.append(str(row[data_col]))
             b = []
-            b.append(row[label_col])
+            b.append(str(row[label_col]))
             yield index, {
                 "data": a,
                 "labels": b,
@@ -135,14 +135,11 @@ def change_yml_for_dataset(config_args, specific_type: int, data_col: str, label
 
 if __name__ == '__main__':
     # https: // huggingface.co / docs / datasets / processing.html
-    # samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
 
-    # new_features = samples_dataset.features.copy()
-    # new_features["label"] = ClassLabel(names=[''])
-    # samples_dataset = samples_dataset.cast(new_features)
+    # Uncomment: to change the yml to create different dataset!:
+    # change_yml_for_dataset(config_args=config_args, specific_type=0,
+    #                        data_col='song_id', label_col='artist')
 
-    change_yml_for_dataset(config_args=config_args, specific_type=0,
-                           data_col='song_id', label_col='artist')
     samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
 
 
