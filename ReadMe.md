@@ -28,5 +28,33 @@ hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X
   and split it to train, test and validation (./data)
   
 ###### Data Exploration
-- Ideas:
- - 
+- Before splitting to train, test and validation, we can:
+    - Print statistics of songs by length, genre, artist, etc.
+    - Words cloud of songs lyrics.
+    - Words cloud of sentences in songs lyrics that is annotated.
+    - Words cloud of the annotated sentences.
+    - Statistics from the zero-shot.
+    - Correlation between page ranking and other features.
+- After splitting to train, test and validation, we can:
+    - Print out several sentences with annotations
+    - Print statistics of sentences with annotations by length (both song and annotation)
+
+After looking at the data:
+- We can see that a lot of the annotations has the artist name in it.
+- Some annotations rely on previous songs.
+- Some annotations rely on the full lyrics.
+- Some annotations have noise like:
+  - https
+- Some songs are in other languages (Russion, Espanol, French)
+
+##### Future work:
+  - Insert a paragraph and annotation to a model and get the sentence that the annotation is talking about.
+  - Insert a paragraph and a sentence to a model and get the annotation that the sentence is talking about.
+  - Insert a paragraph and information about the artist and get the sentence that the annotation is talking about.
+
+##### Problems:
+  - The annotations have a lot of names and history of the artists.
+    - Solutions:
+       - NER (named entity recognition) and replace the names with some generic words.
+       - Remove examples with names.
+       - insert the name of the artist with the sentence.
