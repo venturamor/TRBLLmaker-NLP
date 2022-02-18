@@ -17,13 +17,12 @@
 
 import os
 from os.path import join
-import datasets
+import sys
 import pandas as pd
 import datasets
 from config_parser import config_args
 from datasets import ClassLabel, Value
 import yaml
-import sys
 
 # You can copy an official description
 _DESCRIPTION = """\
@@ -126,7 +125,7 @@ def change_yml_for_dataset(config_args, specific_type: int, data_col: str, label
     new_config_args = config_args.copy()
     new_config_args['train_args']['specific_type'] = specific_type
     new_config_args['train_args']['data_col'] = data_col
-    new_config_args['train_args']['specific_type'] = label_col
+    new_config_args['train_args']['label_col'] = label_col
     file = open('config.yaml', "w")
     yaml.dump(new_config_args, file)
     file.close()
@@ -137,8 +136,8 @@ if __name__ == '__main__':
     # https: // huggingface.co / docs / datasets / processing.html
 
     # Uncomment: to change the yml to create different dataset!:
-    # change_yml_for_dataset(config_args=config_args, specific_type=0,
-    #                        data_col='song_id', label_col='artist')
+    change_yml_for_dataset(config_args=config_args, specific_type=1,
+                           data_col='text', label_col='annotation')
 
     samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
 

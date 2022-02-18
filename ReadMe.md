@@ -26,6 +26,11 @@ hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X
 - [data_arrangement](data_arrangement.py) - gather all extracted data to uniq set (db_pickles/final)
 - [prepare_data](prepare_data.py) - organize data in dataframe format (./jsons), 
   and split it to train, test and validation (./data)
+
+##### Dataset
+Working with HuggingFace Dataset format.
+- [TRBLL_dataset](TRBLL_dataset.py) - our Dataset struct - takes the jsons that are located in ./data, by config - train_args.
+- Dataset include train, test and validation DatasetDicts.
   
 ###### Data Exploration
 - Before splitting to train, test and validation, we can:
