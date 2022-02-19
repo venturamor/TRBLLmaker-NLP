@@ -40,6 +40,7 @@ def get_actual_predictions(predictions, tokenized_dataset, tokenizer):
         actual_predictions.append(current_predictions)
     return actual_predictions
 
+
 def compute_metrics(eval_pred, tokenizer):
     # eval metric
     rouge_score = load_metric("rouge")

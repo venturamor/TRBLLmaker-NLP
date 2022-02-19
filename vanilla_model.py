@@ -45,11 +45,11 @@ max_target_length = 512
 #######################################
 # Dataset - my
 samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
-data = samples_dataset['test']['data'][806]
-labels = samples_dataset['test']['labels'][806]
+data = samples_dataset['test']['data'][:100]
+labels = samples_dataset['test']['labels'][:100]
 
 #######################################
-task_prefix = "generate_meaning: " #None  # "generate song lyrics meaning: "  # None
+task_prefix = None # "generate_meaning: " #None  # "generate song lyrics meaning: "  # None
 
 if task_prefix:
     inputs = tokenizer([task_prefix + sentence[0] for sentence in data], return_tensors="pt",
@@ -59,14 +59,30 @@ if task_prefix:
 else:
     inputs = tokenizer([sentence[0] for sentence in data], return_tensors="pt",
                        max_length=max_input_length, truncation=True, padding=True)
-    labels = tokenizer([sentence[0] for sentence in labels], return_tensors="pt",
+    labels1 = tokenizer([sentence[0] for sentence in labels], return_tensors="pt",
                        max_length=max_target_length, truncation=True,  padding=True)
 #################
-# https://towardsdatascience.com/asking-the-right-questions-training-a-t5-transformer-model-on-a-new-task-691ebba2d72c
-model1 = T5Model.from_pretrained(model_name)
-input_ids = inputs.input_ids
-decoder_input_ids = labels.input_ids
-preds = model1.predict([task_prefix + data[0]])
+# # try1:
+# # https://towardsdatascience.com/asking-the-right-questions-training-a-t5-transformer-model-on-a-new-task-691ebba2d72c
+# model1 = T5Model.from_pretrained(model_name)
+# input_ids = inputs.input_ids
+# decoder_input_ids = labels.input_ids
+# preds = model1.predict([task_prefix + data[0]]) # doesnt work
+
+#################
+#try 2:
+# # https://huggingface.co/deep-learning-analytics/triviaqa-t5-base
+# text = data[0]
+# preprocess_text = text.strip().replace("\n", "")
+# tokenized_text = tokenizer.encode(preprocess_text, return_tensors="pt")
+# outs = model.generate(
+#             tokenized_text,
+#             max_length=512,
+#             # num_beams=2,
+#             # early_stopping=True
+#            )
+# dec = [tokenizer.decode(ids) for ids in outs]
+# print("Predicted Meaning: ", dec)
 
 #################
 # inputs: data {inputs_ids, attention mask}
