@@ -8,6 +8,8 @@ from box import Box
 import yaml
 import os
 import datetime
+import re
+import string
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
@@ -16,8 +18,8 @@ def explore_data():
         training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
 
     # Load data
-    samples = pd.read_json('jsons/samples_110222_1400.json')
-    songs = pd.read_json('jsons/songs_110222_1400.json')
+    samples = pd.read_json('jsons/samples_final.json')
+    songs = pd.read_json('jsons/songs_final.json')
 
     # Calculate statistics
     lyrics_length = []
@@ -75,7 +77,7 @@ def explore_data():
     plt.show()
     # Annotation length distribution
     plt.hist(annotation_length, bins=100, range=(0, 10000), density=True,
-             color='blue', edgecolor='black',linewidth=1.2)
+             color='blue', edgecolor='black', linewidth=1.2)
     plt.title('Distribution of annotations length')
     plt.xlabel('Length')
     plt.ylabel('Number of annotations')
@@ -107,4 +109,50 @@ def explore_data():
     # Now save the document
     doc.save(filename + ' ' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.docx')
 
-explore_data()
+
+def clean_data():
+    with open('config.yaml') as f:
+        training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
+
+    # Load data
+    samples = pd.read_json('jsons/samples_final.json')
+    songs = pd.read_json('jsons/songs_final.json')
+
+    bad_song_ids = []
+    char_set = string.ascii_letters + string.digits + string.punctuation + '•' + '–' + '…' + '”' + '“' + '‘' + '’' +\
+               '—' + ' ' + '\n' + '\r' + '\t'
+
+    for index, sample in enumerate(samples.itertuples()):
+        text = sample.text
+        annotation = sample.annotation
+        song_id = sample.song_id
+        is_bad = False
+        for text_char in text:  # check if text contains only allowed characters
+            if text_char not in char_set:
+                bad_song_ids.append(song_id)
+                samples.drop(index, inplace=True)
+                is_bad = True
+                break
+        if is_bad:
+            continue
+        for annotation_char in annotation:  # check if annotation contains only allowed characters
+            if annotation_char not in char_set:
+                bad_song_ids.append(song_id)
+                samples.drop(index, inplace=True)
+                break
+
+    # remove links from annotations
+    samples['annotation'] = samples['annotation'].str.replace('http\S+', '')
+
+    samples.to_json('jsons/samples_cleaned.json')
+    # samples.to_csv('csvs/samples_cleaned.csv', index=False)
+
+    bad_song_ids = list(set(bad_song_ids))
+    songs = songs[~songs.song_id.isin(bad_song_ids)]
+    songs.to_json('jsons/songs_cleaned.json')
+    # songs.to_csv('csvs/songs_cleaned.csv', index=False)
+
+
+if __name__ == '__main__':
+    clean_data()
+    # explore_data()
