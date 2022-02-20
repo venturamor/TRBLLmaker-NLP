@@ -30,7 +30,7 @@ from TRBLL_dataset import TRBLLDataset
 
 # ----------------------------- init ----------------------------
 
-model_name = "t5-small"  # config_args["model_vanilla_args"]["model_name"]
+model_name = "t5-base"  # config_args["model_vanilla_args"]["model_name"]
 tokenizer = T5Tokenizer.from_pretrained(model_name)
 # model = T5Model.from_pretrained(model_name)
 model = T5ForConditionalGeneration.from_pretrained(model_name)

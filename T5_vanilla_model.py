@@ -1,10 +1,10 @@
 from config_parser import config_args
-from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model
+from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model, T5TokenizerFast
 from transformers import DataCollatorForSeq2Seq
 from transformers import Seq2SeqTrainer
 from transformers import Seq2SeqTrainingArguments
 from nltk.tokenize import sent_tokenize
-
+import wandb
 
 
 import torch
@@ -41,29 +41,6 @@ def get_actual_predictions(predictions, tokenized_dataset, tokenizer):
     return actual_predictions
 
 
-def compute_metrics(eval_pred, tokenizer):
-    # eval metric
-    rouge_score = load_metric("rouge")
-
-    predictions, labels = eval_pred
-    # Decode generated summaries into text
-    decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
-    # Replace -100 in the labels as we can't decode them
-    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
-    # Decode reference summaries into text
-    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
-    # ROUGE expects a newline after each sentence
-    decoded_preds = ["\n".join(sent_tokenize(pred.strip())) for pred in decoded_preds]
-    decoded_labels = ["\n".join(sent_tokenize(label.strip())) for label in decoded_labels]
-    # Compute ROUGE scores
-    result = rouge_score.compute(
-        predictions=decoded_preds, references=decoded_labels, use_stemmer=True
-    )
-    # Extract the median scores
-    result = {key: value.mid.fmeasure * 100 for key, value in result.items()}
-    return {k: round(v, 4) for k, v in result.items()}
-
-
 def postprocess_text(preds, labels):
     preds = [pred.strip() for pred in preds]
     labels = [label.strip() for label in labels]
@@ -75,19 +52,15 @@ def postprocess_text(preds, labels):
     return preds, labels
 
 
-def preprocess_function(samples):
-    max_input_length = 512
-    max_target_length = 30
-    model_name = "t5-small"  # config_args["model_vanilla_args"]["model_name"]
-    tokenizer = T5Tokenizer.from_pretrained(model_name)
-
-    # fix list of lists (mor)
+def preprocess_function(samples, tokenizer, max_input_length=512, max_target_length=512):
+    # fix list of lists (Mor)
     samples["data"] = [sentence[0] for sentence in samples["data"]]
     samples["labels"] = [sentence[0] for sentence in samples["labels"]]
 
     model_inputs = tokenizer(
         samples["data"], max_length=max_input_length, truncation=True, padding=True
     )
+
     # Set up the tokenizer for targets
     with tokenizer.as_target_tokenizer():
         labels = tokenizer(
@@ -95,22 +68,31 @@ def preprocess_function(samples):
         )
 
     model_inputs["labels"] = labels["input_ids"]
-    model_inputs["decoder_input_ids"] = labels["input_ids"]  # my addition
+    # model_inputs["decoder_input_ids"] = labels["input_ids"]  # my addition
     return model_inputs
 
 
 def run_model():
+    experiment_name = "TRBLL_seq2seq_experiment"
+    project_name = "TRBLL_seq2seq_experiment"
+    # initialize wandb to visualize training progress
+    wandb.init(project=project_name, entity="tokeron", name=experiment_name)
     model_name = "t5-small"  # config_args["model_vanilla_args"]["model_name"]
-    tokenizer = T5Tokenizer.from_pretrained(model_name)
-    model = T5Model.from_pretrained(model_name)
-    # model = T5ForConditionalGeneration.from_pretrained(model_name)
+    tokenizer = T5TokenizerFast.from_pretrained(model_name)
+    # model = T5Model.from_pretrained(model_name)
+    model = T5ForConditionalGeneration.from_pretrained(model_name)
 
     samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
 
-    tokenized_datasets = samples_dataset.map(preprocess_function, batched=True)
+    tokenized_datasets = samples_dataset.map(
+        preprocess_function,
+        batched=True,
+        remove_columns=samples_dataset["train"].column_names,
+        fn_kwargs={'tokenizer': tokenizer}
+    )
     # args
     batch_size = 8
-    num_train_epochs = 8
+    num_train_epochs = 1
     # Show the training loss with every epoch
     logging_steps = len(tokenized_datasets["train"]) // batch_size
 
@@ -124,8 +106,11 @@ def run_model():
         save_total_limit=3,
         num_train_epochs=num_train_epochs,
         predict_with_generate=True,
+        logging_strategy="steps",
         logging_steps=logging_steps,
         push_to_hub=False,
+        report_to="wandb",
+        run_name=experiment_name,
     )
 
 
@@ -133,12 +118,34 @@ def run_model():
     data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
 
     # remove the columns with strings because the collator won’t know how to pad these elements
-    tokenized_datasets = tokenized_datasets.remove_columns(
-        samples_dataset["train"].column_names
-    )
+    # tokenized_datasets = tokenized_datasets.remove_columns(
+    #     samples_dataset["train"].column_names
+    # )
     # the collator expects a list of dicts
-    features = [tokenized_datasets["train"][i] for i in range(2)]
-    data_collator(features)
+    # features = [tokenized_datasets["train"][i] for i in range(2)]
+    # data_collator(features)
+
+    def compute_metrics(eval_pred):
+        # eval metric
+        rouge_score = load_metric("rouge")
+
+        predictions, labels = eval_pred
+        # Decode generated summaries into text
+        decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
+        # Replace -100 in the labels as we can't decode them
+        labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
+        # Decode reference summaries into text
+        decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+        # ROUGE expects a newline after each sentence
+        decoded_preds = ["\n".join(sent_tokenize(pred.strip())) for pred in decoded_preds]
+        decoded_labels = ["\n".join(sent_tokenize(label.strip())) for label in decoded_labels]
+        # Compute ROUGE scores
+        result = rouge_score.compute(
+            predictions=decoded_preds, references=decoded_labels, use_stemmer=True
+        )
+        # Extract the median scores
+        result = {key: value.mid.fmeasure * 100 for key, value in result.items()}
+        return {k: round(v, 4) for k, v in result.items()}
 
     #  with the Trainer API
     trainer = Seq2SeqTrainer(
@@ -151,13 +158,14 @@ def run_model():
         compute_metrics=compute_metrics,
     )
 
-    # trainer.train()
+    trainer.train()
     # trainer.evaluate()
 
     #
 
-    predictions = trainer.predict(tokenized_datasets["test"])
-    predictions = get_actual_predictions(predictions, tokenized_datasets['test'], tokenizer)
+    predictions = trainer.predict(tokenized_datasets["validation"])
+    # predictions = get_actual_predictions(predictions, tokenized_datasets['validation'], tokenizer)
 
+    # predictions = [pred.strip() for pred in predictions]
 if __name__ == '__main__':
     run_model()

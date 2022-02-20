@@ -54,15 +54,6 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
             {
                 "data": datasets.Sequence(datasets.Value("string")),
                 "labels": datasets.Sequence(datasets.Value("string")),
-                # "labels": datasets.Sequence(
-                #     datasets.features.ClassLabel(
-                #         names=[
-                #             "O",
-                #             "B-metaphor",
-                #             "I-metaphor",
-                #         ]
-                #     )
-                # )
             }
         )
         return datasets.DatasetInfo(
@@ -109,14 +100,9 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
         data_col = config_args["train_args"]["data_col"]
         label_col = config_args["train_args"]["label_col"]
         for index, row in df.iterrows():
-            # has to be list. list(row[]) -> list of chars
-            a = []
-            a.append(str(row[data_col]))
-            b = []
-            b.append(str(row[label_col]))
             yield index, {
-                "data": a,
-                "labels": b,
+                "data": [row[data_col]],
+                "labels": [row[label_col]],
             }
 
 
