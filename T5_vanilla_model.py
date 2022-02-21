@@ -17,6 +17,7 @@ import nltk
 nltk.download('punkt')
 from box import Box
 import yaml
+import datetime
 
 
 def postprocess_text(preds, labels):
@@ -62,7 +63,8 @@ def run_model():
     # model = T5Model.from_pretrained(model_name)
     model = T5ForConditionalGeneration.from_pretrained(model_name)
 
-    experiment_name = model_name + "_lr-" + str(learning_rate) + "_bs-" + str(batch_size)
+    experiment_name = model_name + "_lr-" + str(learning_rate) + "_bs-" + str(batch_size) + \
+                      datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     project_name = training_args.wandb_args.project_name
     entity = training_args.wandb_args.entity
     # initialize wandb to visualize training progress
@@ -145,13 +147,19 @@ def run_model():
 
     trainer.evaluate()
     predictions = trainer.predict(tokenized_datasets["validation"])
+    predictions_text = tokenizer.batch_decode(predictions[0], skip_special_tokens=True)
     # Save predictions to file
     with open(f"{experiment_name}_predictions.txt", "w") as f:
-        for pred in predictions:
-            f.write(pred + "\n")
-    print(predictions)
-    # predictions = get_actual_predictions(predictions, tokenized_datasets['validation'], tokenizer)
-    # predictions = [pred.strip() for pred in predictions]
+        for index, (song, annotation, prediction) in enumerate(zip(samples_dataset["validation"]["data"],
+                                                                   samples_dataset["validation"]["labels"],
+                                                                   predictions_text)):
+            #  Print in seperated lines: index, song, annotation, prediction
+            f.write(f"{index}\n")
+            f.write("Song: " + str(song) + "\n")
+            f.write("Annotation: " + str(annotation) + "\n")
+            f.write("Prediction: " + str(prediction) + "\n")
+            f.write("\n")
+            f.write("\n")
 
 
 if __name__ == '__main__':
