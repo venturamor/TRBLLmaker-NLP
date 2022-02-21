@@ -5,8 +5,6 @@ from transformers import Seq2SeqTrainer
 from transformers import Seq2SeqTrainingArguments
 from nltk.tokenize import sent_tokenize
 import wandb
-
-
 import torch
 import os
 from os.path import join
@@ -15,6 +13,8 @@ import numpy as np
 import datasets
 from TRBLL_dataset import TRBLLDataset
 from datasets import load_metric
+import nltk
+nltk.download('punkt')
 
 
 def get_actual_predictions(predictions, tokenized_dataset, tokenizer):
@@ -82,6 +82,7 @@ def run_model():
     # model = T5Model.from_pretrained(model_name)
     model = T5ForConditionalGeneration.from_pretrained(model_name)
 
+    #  @TODO don't load from cache
     samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
 
     tokenized_datasets = samples_dataset.map(
@@ -91,14 +92,16 @@ def run_model():
         fn_kwargs={'tokenizer': tokenizer}
     )
     # args
-    batch_size = 8
+    batch_size = 16
     num_train_epochs = 1
     # Show the training loss with every epoch
     logging_steps = len(tokenized_datasets["train"]) // batch_size
-
     args = Seq2SeqTrainingArguments(
         output_dir=f"{model_name}-finetuned-vanilla1",
-        evaluation_strategy="epoch",
+        evaluation_strategy="steps",
+        eval_steps=10,
+        logging_strategy="steps",
+        logging_steps=10,
         learning_rate=5.6e-5,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
@@ -106,8 +109,6 @@ def run_model():
         save_total_limit=3,
         num_train_epochs=num_train_epochs,
         predict_with_generate=True,
-        logging_strategy="steps",
-        logging_steps=logging_steps,
         push_to_hub=False,
         report_to="wandb",
         run_name=experiment_name,
@@ -121,6 +122,7 @@ def run_model():
     # tokenized_datasets = tokenized_datasets.remove_columns(
     #     samples_dataset["train"].column_names
     # )
+    #  TODO check if relevant
     # the collator expects a list of dicts
     # features = [tokenized_datasets["train"][i] for i in range(2)]
     # data_collator(features)
@@ -159,13 +161,13 @@ def run_model():
     )
 
     trainer.train()
-    # trainer.evaluate()
 
-    #
-
+    trainer.evaluate()
     predictions = trainer.predict(tokenized_datasets["validation"])
+    print(predictions)
     # predictions = get_actual_predictions(predictions, tokenized_datasets['validation'], tokenizer)
-
     # predictions = [pred.strip() for pred in predictions]
+
+
 if __name__ == '__main__':
     run_model()
