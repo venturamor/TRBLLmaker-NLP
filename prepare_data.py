@@ -83,6 +83,10 @@ def split_by_songs(songs_json_path, samples_json_path):
 
     songs_df = pd.read_json(songs_json_path)
     samples_df = pd.read_json(samples_json_path)
+
+    # Leave only 10% of songs. This is a mini dataset.
+    all_the_rest, songs_df = train_test_split(songs_df, test_size=0.1)
+
     # songs df split
     train_songs, test_songs = train_test_split(songs_df, test_size=test_size)
 
@@ -126,13 +130,13 @@ if __name__ == '__main__':
     # for creating train, test, validation data jsons
     pickle_dir = config_args["data_extraction"]["pickles_parent_dir"]
     genre = 'final'
-    pickle_name = 'final_140222_2012.pickle'
+    pickle_name = 'final.pickle'
     db_pickle_path = join(pickle_dir, genre, pickle_name)
     # pickle_2_dataframes(db_pickle_path)
 
     # split songs
-    json_song = 'songs_140222_2040.json'
-    json_samp = 'samples_140222_2040.json'
+    json_song = 'songs_final.json'
+    json_samp = 'samples_final.json'
     songs_json_path = join(config_args['data_extraction']['jsons_dir'], json_song)
     samples_json_path = join(config_args['data_extraction']['jsons_dir'], json_samp)
     split_by_songs(songs_json_path, samples_json_path)

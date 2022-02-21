@@ -15,30 +15,8 @@ from TRBLL_dataset import TRBLLDataset
 from datasets import load_metric
 import nltk
 nltk.download('punkt')
-
-
-def get_actual_predictions(predictions, tokenized_dataset, tokenizer):
-    """
-    Get the actual predictions.
-    The current method is to take the maximal value of the sub-words of a word as the prediction of the word
-    :param predictions: list of predictions on sub-words
-    :param tokenized_dataset: list of tokenized dataset
-    :param tokenizer: tokenizer used for tokenization
-    :return: predictions on original words
-    """
-    actual_predictions = []
-    for i, (prediction_array, input_ids) in enumerate(zip(predictions.predictions, tokenized_dataset['input_ids'])):
-        current_predictions = []
-        prediction_array = prediction_array.argmax(-1)
-        words = tokenizer.convert_ids_to_tokens(input_ids)
-        for word_index, (word, prediction) in enumerate(zip(words, prediction_array)):
-            if word != "[SEP]" and word != "[CLS]" and word.find("#") == -1:
-                while word_index+1 < len(input_ids) and words[word_index+1].find("#") != -1:
-                    prediction = max(prediction, prediction_array[word_index+1])
-                    word_index += 1
-                current_predictions.append(prediction)
-        actual_predictions.append(current_predictions)
-    return actual_predictions
+from box import Box
+import yaml
 
 
 def postprocess_text(preds, labels):
@@ -73,17 +51,24 @@ def preprocess_function(samples, tokenizer, max_input_length=512, max_target_len
 
 
 def run_model():
-    experiment_name = "TRBLL_seq2seq_experiment"
-    project_name = "TRBLL_seq2seq_experiment"
-    # initialize wandb to visualize training progress
-    wandb.init(project=project_name, entity="tokeron", name=experiment_name)
+    with open('config.yaml') as f:
+        training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
+
+    learning_rate = training_args.train_args.learning_rate
+    batch_size = training_args.train_args.batch_size
+
     model_name = "t5-small"  # config_args["model_vanilla_args"]["model_name"]
     tokenizer = T5TokenizerFast.from_pretrained(model_name)
     # model = T5Model.from_pretrained(model_name)
     model = T5ForConditionalGeneration.from_pretrained(model_name)
 
-    #  @TODO don't load from cache
-    samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
+    experiment_name = model_name + "_lr-" + str(learning_rate) + "_bs-" + str(batch_size)
+    project_name = training_args.wandb_args.project_name
+    entity = training_args.wandb_args.entity
+    # initialize wandb to visualize training progress
+    wandb.init(project=project_name, entity=entity, name=experiment_name)
+
+    samples_dataset = datasets.load_dataset('TRBLL_dataset_mini.py')
 
     tokenized_datasets = samples_dataset.map(
         preprocess_function,
@@ -92,21 +77,21 @@ def run_model():
         fn_kwargs={'tokenizer': tokenizer}
     )
     # args
-    batch_size = 16
+    batch_size = 8
     num_train_epochs = 1
     # Show the training loss with every epoch
     logging_steps = len(tokenized_datasets["train"]) // batch_size
     args = Seq2SeqTrainingArguments(
         output_dir=f"{model_name}-finetuned-vanilla1",
         evaluation_strategy="steps",
-        eval_steps=10,
+        eval_steps=training_args.train_args.eval_steps,
         logging_strategy="steps",
-        logging_steps=10,
-        learning_rate=5.6e-5,
+        logging_steps=training_args.train_args.eval_steps,
+        learning_rate=learning_rate,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        weight_decay=0.01,
-        save_total_limit=3,
+        weight_decay=training_args.train_args.weight_decay,
+        save_total_limit=training_args.train_args.save_total_limit,
         num_train_epochs=num_train_epochs,
         predict_with_generate=True,
         push_to_hub=False,
@@ -118,10 +103,6 @@ def run_model():
     # collator
     data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
 
-    # remove the columns with strings because the collator won’t know how to pad these elements
-    # tokenized_datasets = tokenized_datasets.remove_columns(
-    #     samples_dataset["train"].column_names
-    # )
     #  TODO check if relevant
     # the collator expects a list of dicts
     # features = [tokenized_datasets["train"][i] for i in range(2)]
@@ -164,6 +145,10 @@ def run_model():
 
     trainer.evaluate()
     predictions = trainer.predict(tokenized_datasets["validation"])
+    # Save predictions to file
+    with open(f"{experiment_name}_predictions.txt", "w") as f:
+        for pred in predictions:
+            f.write(pred + "\n")
     print(predictions)
     # predictions = get_actual_predictions(predictions, tokenized_datasets['validation'], tokenizer)
     # predictions = [pred.strip() for pred in predictions]

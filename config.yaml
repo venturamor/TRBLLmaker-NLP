@@ -22,8 +22,16 @@ train_args:
   - samples
   label_col: annotation
   parts:
-  - train
-  - test
-  - validation
+  - train_mini
+  - test_mini
+  - validation_mini
   specific_type: 1
   test_size: 0.2
+  learning_rate: 0.0000001
+  batch_size: 8
+  eval_steps: 10
+  weight_decay: 0.01
+  save_total_limit: 3
+wandb_args:
+  project_name: TRBLL_seq2seq_experiment
+  entity: "tokeron"
