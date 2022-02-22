@@ -57,20 +57,21 @@ def run_model():
 
     learning_rate = training_args.train_args.learning_rate
     batch_size = training_args.train_args.batch_size
+    num_train_epochs = training_args.train_args.num_train_epochs
 
-    model_name = "t5-small"  # config_args["model_vanilla_args"]["model_name"]
+    model_name = training_args.train_args.model_name
     tokenizer = T5TokenizerFast.from_pretrained(model_name)
     # model = T5Model.from_pretrained(model_name)
     model = T5ForConditionalGeneration.from_pretrained(model_name)
 
-    experiment_name = model_name + "_lr-" + str(learning_rate) + "_bs-" + str(batch_size) + \
+    experiment_name = model_name + "_lr-" + str(learning_rate) + "_bs-" + str(batch_size) +"_date-"+ \
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     project_name = training_args.wandb_args.project_name
     entity = training_args.wandb_args.entity
     # initialize wandb to visualize training progress
     wandb.init(project=project_name, entity=entity, name=experiment_name)
 
-    samples_dataset = datasets.load_dataset('TRBLL_dataset_mini.py')
+    samples_dataset = datasets.load_dataset(training_args.train_args.dataset_name)
 
     tokenized_datasets = samples_dataset.map(
         preprocess_function,
@@ -79,10 +80,10 @@ def run_model():
         fn_kwargs={'tokenizer': tokenizer}
     )
     # args
-    batch_size = 8
-    num_train_epochs = 1
+
     # Show the training loss with every epoch
-    logging_steps = len(tokenized_datasets["train"]) // batch_size
+    # logging_steps = len(tokenized_datasets["train"]) // batch_size
+
     args = Seq2SeqTrainingArguments(
         output_dir=f"{model_name}-finetuned-vanilla1",
         evaluation_strategy="steps",

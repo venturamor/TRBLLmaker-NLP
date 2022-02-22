@@ -141,8 +141,11 @@ def clean_data():
                 samples.drop(index, inplace=True)
                 break
 
+    # TODO check if urls are really removed
     # remove links from annotations
     samples['annotation'] = samples['annotation'].str.replace('http\S+', '')
+
+    # TODO check if there are more patterns to remove
 
     samples.to_json('jsons/samples_cleaned.json')
     # samples.to_csv('csvs/samples_cleaned.csv', index=False)

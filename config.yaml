@@ -12,8 +12,7 @@ data_extraction:
   pickles_parent_dir: ./db_pickles
   save_songs_db_every: 20
   token: hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X
-model_vanilla_args:
-  model_name: t5-small
+
 train_args:
   data_col: text
   data_dir: ./data
@@ -28,10 +27,14 @@ train_args:
   specific_type: 1
   test_size: 0.2
   learning_rate: 0.0000001
-  batch_size: 8
   eval_steps: 10
   weight_decay: 0.01
   save_total_limit: 3
+  batch_size: 32
+  num_train_epochs: 5
+  dataset_name: TRBLL_dataset.py
+  model_name: t5-base
+
 wandb_args:
   project_name: TRBLL_seq2seq_experiment
   entity: "tokeron"
