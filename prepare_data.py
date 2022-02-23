@@ -74,18 +74,21 @@ def split_by_songs(songs_json_path, samples_json_path):
     """
     splits songs json and samples json to train, test and validation.
     samples are splitted by songs split (song id).
+    :param take_mini:
     :param songs_json_path:
     :param samples_json_path:
     :return: save new jsons (train, test, validation) per songs and samples
     """
 
     test_size = config_args["train_args"]["test_size"]
+    take_mini = config_args["train_args"]["take_mini"]
 
     songs_df = pd.read_json(songs_json_path)
     samples_df = pd.read_json(samples_json_path)
 
     # Leave only 10% of songs. This is a mini dataset.
-    all_the_rest, songs_df = train_test_split(songs_df, test_size=0.1)
+    if take_mini != 0:  # if different from 0
+        all_the_rest, songs_df = train_test_split(songs_df, test_size=take_mini)
 
     # songs df split
     train_songs, test_songs = train_test_split(songs_df, test_size=test_size)
@@ -111,6 +114,10 @@ def split_by_songs(songs_json_path, samples_json_path):
         makedirs(data_dir)
 
     str_parts = config_args['train_args']['parts']
+
+    if take_mini != 0:
+        str_parts = [part + '_mini' for part in str_parts]
+
     dirs = config_args['train_args']['data_type']
     for dir in dirs:
         if not exists(join(data_dir, dir)):
@@ -135,8 +142,8 @@ if __name__ == '__main__':
     # pickle_2_dataframes(db_pickle_path)
 
     # split songs
-    json_song = 'songs_final.json'
-    json_samp = 'samples_final.json'
+    json_song = 'songs_cleaned.json'  # 'songs_final.json'
+    json_samp = 'samples_cleaned.json'  # 'samples_final.json'
     songs_json_path = join(config_args['data_extraction']['jsons_dir'], json_song)
     samples_json_path = join(config_args['data_extraction']['jsons_dir'], json_samp)
     split_by_songs(songs_json_path, samples_json_path)
