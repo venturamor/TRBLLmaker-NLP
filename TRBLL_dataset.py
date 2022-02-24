@@ -65,19 +65,19 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
         data_dir = config_args["train_args"]["data_dir"]
         data_types = config_args["train_args"]["data_type"]
         data_type = config_args["train_args"]["specific_type"]
-        take_mini = config_args["train_args"]["take_mini"]
-        str_parts = config_args["train_args"]["parts"]
-        if take_mini != 0:
-            str_parts = [part + '_mini.json' for part in str_parts]
-        else:
-            str_parts = [part + '.json' for part in str_parts]
+        # take_mini = config_args["train_args"]["take_mini"]
+        # str_parts = config_args["train_args"]["parts"]
+        # if take_mini != 0:
+        #     str_parts = [part + '_mini.json' for part in str_parts]
+        # else:
+        #     str_parts = [part + '.json' for part in str_parts]
 
         return [
             datasets.SplitGenerator(
                 name=datasets.Split.TRAIN,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, data_types[data_type], str_parts[0]),
+                    "filepath": os.path.join(data_dir, data_types[data_type], "train.json"),  #str_parts[0]
                     "split": 'train',
                 },
             ),
@@ -85,7 +85,7 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.TEST,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, data_types[data_type], str_parts[1]),
+                    "filepath": os.path.join(data_dir, data_types[data_type], "test.json"),  #str_parts[1]
                     "split": "test",
 
                 },
@@ -94,7 +94,7 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.VALIDATION,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, data_types[data_type], str_parts[2]),
+                    "filepath": os.path.join(data_dir, data_types[data_type], "validation.json"),  #str_parts[3]
                     "split": "validation",
                 },
             ),
@@ -111,24 +111,24 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
                 "labels": [row[label_col]],
             }
 
+#
+# def change_yml_for_dataset(config_args, specific_type: int, data_col: str, label_col: str):
+#     new_config_args = config_args.copy()
+#     new_config_args['train_args']['specific_type'] = specific_type
+#     new_config_args['train_args']['data_col'] = data_col
+#     new_config_args['train_args']['label_col'] = label_col
+#     file = open('config.yaml', "w")
+#     yaml.dump(new_config_args, file)
+#     file.close()
+#     from config_parser import config_args
 
-def change_yml_for_dataset(config_args, specific_type: int, data_col: str, label_col: str):
-    new_config_args = config_args.copy()
-    new_config_args['train_args']['specific_type'] = specific_type
-    new_config_args['train_args']['data_col'] = data_col
-    new_config_args['train_args']['label_col'] = label_col
-    file = open('config.yaml', "w")
-    yaml.dump(new_config_args, file)
-    file.close()
-    from config_parser import config_args
-
-
-if __name__ == '__main__':
-    # https: // huggingface.co / docs / datasets / processing.html
-
-    # Uncomment: to change the yml to create different dataset!:
-    # change_yml_for_dataset(config_args=config_args, specific_type=1,
-    #                        data_col='text', label_col='annotation')
-
-    samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
-    print('done! ')
+#
+# if __name__ == '__main__':
+#     # https: // huggingface.co / docs / datasets / processing.html
+#
+#     # Uncomment: to change the yml to create different dataset!:
+#     # change_yml_for_dataset(config_args=config_args, specific_type=1,
+#     #                        data_col='text', label_col='annotation')
+#
+#     samples_dataset = datasets.load_dataset('TRBLL_dataset.py')
+#     print('done! ')
