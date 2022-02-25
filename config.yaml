@@ -18,7 +18,7 @@ train_args:
   data_type:
   - songs
   - samples
-  dataset_name: TRBLL_dataset.py
+  dataset_name: TRBLL_dataset_mini.py
   eval_steps: 10
   label_col: annotation
   learning_rate: 1.0e-07
@@ -29,12 +29,13 @@ train_args:
   - validation
   save_total_limit: 3
   specific_type: 1
-  take_mini: 0
   test_size: 0.2
   weight_decay: 0.01
+  take_mini: 0
+  dataset_version: 1.1  # 1.1.0 - regular, 1.1.1 - mini
 
-  batch_size: 32
-  num_train_epochs: 5
+  batch_size: 8
+  num_train_epochs: 1
   prompt:
     add_prompt: True
     prompt_type: question_context # constant, song_metadata, question_context

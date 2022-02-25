@@ -44,7 +44,7 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
     VERSION = datasets.Version("1.1.0")
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="trbll_dataset", version=VERSION, description="TRBLL dataset"),
+        datasets.BuilderConfig(name="trbll_dataset_mini", version=VERSION, description="TRBLL dataset"),
     ]
 
     DEFAULT_CONFIG_NAME = "trbll_dataset"  # It's not mandatory to have a default configuration. Just use one if it make sense.

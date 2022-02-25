@@ -34,14 +34,14 @@ def postprocess_text(preds, labels):
 def generate_prompts(samples, prompt_type):
     with open('config.yaml') as f:
         training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
-    if prompt_type is "constant":
+    if prompt_type == "constant":
         data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in samples["data"]]
-    elif prompt_type is "song_metadata":
+    elif prompt_type == "song_metadata":
         # Load the songs and annotations
-        data = ["Explain the next line from the song " + title + " by " + artist + ": " + sentence[0]
+        data = ["Explain the next line from the song " + '"' + title[0] + '" by ' + artist[0] + ": " + sentence[0]
                 for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
-    elif prompt_type is "question_context":
-        data = ["question: what is the meaning of " + artist + " " + " in the song " + title + "?\n" +
+    elif prompt_type == "question_context":
+        data = ["question: what is the meaning of " + artist[0] + " in the song " + '"' + title[0] + '"? ' +
                 "context: " + sentence[0]
                 for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
     else:  # default: no prompt
@@ -58,8 +58,7 @@ def preprocess_function(samples, tokenizer, max_input_length=512, max_target_len
         # fix list of lists
         samples["data"] = [sentence[0] for sentence in samples["data"]]
 
-    # fix list of lists
-    # samples["data"] already fixed
+    # fix list of lists ( samples["data"] already fixed)
     samples["labels"] = [sentence[0] for sentence in samples["labels"]]
 
     model_inputs = tokenizer(
@@ -73,7 +72,6 @@ def preprocess_function(samples, tokenizer, max_input_length=512, max_target_len
         )
 
     model_inputs["labels"] = labels["input_ids"]
-    # model_inputs["decoder_input_ids"] = labels["input_ids"]  # my addition
     return model_inputs
 
 
@@ -155,6 +153,16 @@ def run_model():
         # ROUGE expects a newline after each sentence
         decoded_preds = ["\n".join(sent_tokenize(pred.strip())) for pred in decoded_preds]
         decoded_labels = ["\n".join(sent_tokenize(label.strip())) for label in decoded_labels]
+        examples_to_print = 10
+        # Print to training_eval.txt out the first few examples of summaries and references
+        with open("training_eval.txt", "w") as f:
+            for i in range(examples_to_print):
+                f.write("Prediction: {}\n".format(decoded_preds[i]))
+                f.write("Label: {}\n".format(decoded_labels[i]))
+                f.write("\n")
+        for i in range(examples_to_print):
+            print(f"Prediction: {decoded_preds[i]}")
+            print(f"Label: {decoded_labels[i]}")
         # Compute ROUGE scores
         result = rouge_score.compute(
             predictions=decoded_preds, references=decoded_labels, use_stemmer=True
