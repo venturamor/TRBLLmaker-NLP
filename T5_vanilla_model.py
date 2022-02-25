@@ -15,6 +15,10 @@ from box import Box
 import yaml
 import datetime
 
+# try to clean memory
+import torch
+torch.cuda.empty_cache()
+
 
 def postprocess_text(preds, labels):
     preds = [pred.strip() for pred in preds]
