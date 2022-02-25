@@ -54,6 +54,8 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
             {
                 "data": datasets.Sequence(datasets.Value("string")),
                 "labels": datasets.Sequence(datasets.Value("string")),
+                "title": datasets.Value("string"),
+                "artist": datasets.Value("string"),
             }
         )
         return datasets.DatasetInfo(
@@ -103,4 +105,6 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
             yield index, {
                 "data": [row[data_col]],
                 "labels": [row[label_col]],
+                "title": [row["title"]],
+                "artist": [row["artist"]],
             }

@@ -36,10 +36,11 @@ train_args:
   batch_size: 32
   num_train_epochs: 5
   prompt:
-    add_prompt: False
-    prompt_type: constant # constant, song_metadata, question_context
-    text:
+    add_prompt: True
+    prompt_type: question_context # constant, song_metadata, question_context
+    text: "explain:"
+  results_checkpoints_dir: results_checkpoints
 
 wandb_args:
-  entity: "mor_ventura" #tokeron
+  entity: tokeron #"mor_ventura"
   project_name: "TRBLL_maker"

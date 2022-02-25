@@ -31,18 +31,21 @@ def postprocess_text(preds, labels):
     return preds, labels
 
 
-def generate_prompts(data, prompt_type):
+def generate_prompts(samples, prompt_type):
     with open('config.yaml') as f:
         training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
     if prompt_type is "constant":
-        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in data]
+        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in samples["data"]]
     elif prompt_type is "song_metadata":
         # Load the songs and annotations
-        songs = pd.read_csv(training_args.train_args.prompt.song_metadata_path)
-
-        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in data]
+        data = ["Explain the next line from the song " + title + " by " + artist + ": " + sentence[0]
+                for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
     elif prompt_type is "question_context":
-        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in data]
+        data = ["question: what is the meaning of " + artist + " " + " in the song " + title + "?\n" +
+                "context: " + sentence[0]
+                for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
+    else:  # default: no prompt
+        data = samples["data"]
     return data
 
 
@@ -50,14 +53,13 @@ def preprocess_function(samples, tokenizer, max_input_length=512, max_target_len
     with open('config.yaml') as f:
         training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
     if training_args.train_args.prompt.add_prompt:
-        samples["data"] = generate_prompts(samples["data"],
-                                           prompt_type=training_args.train_args.prompt.prompt_type)
+        samples["data"] = generate_prompts(samples, prompt_type=training_args.train_args.prompt.prompt_type)
     else:
         # fix list of lists
         samples["data"] = [sentence[0] for sentence in samples["data"]]
-    # fix list of lists
 
-    samples["data"] = [sentence[0] for sentence in samples["data"]]
+    # fix list of lists
+    # samples["data"] already fixed
     samples["labels"] = [sentence[0] for sentence in samples["labels"]]
 
     model_inputs = tokenizer(
@@ -93,9 +95,13 @@ def run_model():
     project_name = training_args.wandb_args.project_name
     entity = training_args.wandb_args.entity
     # initialize wandb to visualize training progress
+
     wandb.init(project=project_name, entity=entity, name=experiment_name)
 
     samples_dataset = datasets.load_dataset(training_args.train_args.dataset_name)
+
+    # todo check if OK and delete after
+    # preprocess_function(samples_dataset, tokenizer)
 
     tokenized_datasets = samples_dataset.map(
         preprocess_function,
@@ -186,6 +192,10 @@ def run_model():
             f.write("Prediction: " + str(prediction) + "\n")
             f.write("\n")
             f.write("\n")
+
+    # Save the model
+    trainer.save_model(training_args.train_args.results_checkpoints_dir + "/" + experiment_name)
+    print("Saved model to {}".format(training_args.train_args.results_checkpoints_dir + "/" + experiment_name))
 
 
 if __name__ == '__main__':
