@@ -31,8 +31,32 @@ def postprocess_text(preds, labels):
     return preds, labels
 
 
+def generate_prompts(data, prompt_type):
+    with open('config.yaml') as f:
+        training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
+    if prompt_type is "constant":
+        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in data]
+    elif prompt_type is "song_metadata":
+        # Load the songs and annotations
+        songs = pd.read_csv(training_args.train_args.prompt.song_metadata_path)
+
+        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in data]
+    elif prompt_type is "question_context":
+        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in data]
+    return data
+
+
 def preprocess_function(samples, tokenizer, max_input_length=512, max_target_length=512):
-    # fix list of lists (Mor)
+    with open('config.yaml') as f:
+        training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
+    if training_args.train_args.prompt.add_prompt:
+        samples["data"] = generate_prompts(samples["data"],
+                                           prompt_type=training_args.train_args.prompt.prompt_type)
+    else:
+        # fix list of lists
+        samples["data"] = [sentence[0] for sentence in samples["data"]]
+    # fix list of lists
+
     samples["data"] = [sentence[0] for sentence in samples["data"]]
     samples["labels"] = [sentence[0] for sentence in samples["labels"]]
 
@@ -150,7 +174,8 @@ def run_model():
     predictions = trainer.predict(tokenized_datasets["validation"])
     predictions_text = tokenizer.batch_decode(predictions[0], skip_special_tokens=True)
     # Save predictions to file
-    with open(f"{experiment_name}_predictions.txt", "w") as f:
+    with open(f"{experiment_name}_predictions25.txt", "w") as f:
+        f.write("Predictions: \n")
         for index, (song, annotation, prediction) in enumerate(zip(samples_dataset["validation"]["data"],
                                                                    samples_dataset["validation"]["labels"],
                                                                    predictions_text)):
