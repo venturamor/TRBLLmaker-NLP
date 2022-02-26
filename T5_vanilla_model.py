@@ -154,12 +154,13 @@ def run_model():
         decoded_preds = ["\n".join(sent_tokenize(pred.strip())) for pred in decoded_preds]
         decoded_labels = ["\n".join(sent_tokenize(label.strip())) for label in decoded_labels]
         examples_to_print = 10
-        # Print to training_eval.txt out the first few examples of summaries and references
-        with open("training_eval.txt", "w") as f:
+        # Print the first examples to the end of training_eval.txt
+        with open("training_eval.txt", "a") as f:
+            f.write("###################Eval#####################:\n")
             for i in range(examples_to_print):
                 f.write("Prediction: {}\n".format(decoded_preds[i]))
                 f.write("Label: {}\n".format(decoded_labels[i]))
-                f.write("\n")
+                f.write("\n\n\n")
         for i in range(examples_to_print):
             print(f"Prediction: {decoded_preds[i]}")
             print(f"Label: {decoded_labels[i]}")
