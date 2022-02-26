@@ -19,7 +19,7 @@ from os.path import join
 import sys
 import pandas as pd
 import datasets
-from config_parser import config_args
+from config_parser import config_args, training_args
 from datasets import ClassLabel, Value
 import yaml
 
@@ -39,20 +39,25 @@ _URLS = {
 
 
 class TRBLLDataset(datasets.GeneratorBasedBuilder):
-    """This is a dataset of songs in hebrew with labels for metaphors"""
-    VERSION = datasets.Version("1.1.0")
+    """This is a dataset of songs created for TRBLLmaker"""
+    version = str(training_args.train_args.dataset_version) + '.' + str(training_args.train_args.take_mini)
+    VERSION = datasets.Version(version)
+
+    name = "trbll_dataset"
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="trbll_dataset", version=VERSION, description="TRBLL dataset"),
+        datasets.BuilderConfig(name=name, version=VERSION, description="TRBLL dataset"),
     ]
 
-    DEFAULT_CONFIG_NAME = "trbll_dataset"  # It's not mandatory to have a default configuration. Just use one if it make sense.
+    DEFAULT_CONFIG_NAME = name
 
     def _info(self):
         features = datasets.Features(
             {
                 "data": datasets.Sequence(datasets.Value("string")),
                 "labels": datasets.Sequence(datasets.Value("string")),
+                "title": datasets.Sequence(datasets.Value("string")),
+                "artist": datasets.Sequence(datasets.Value("string")),
             }
         )
         return datasets.DatasetInfo(
@@ -65,19 +70,19 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
         data_dir = config_args["train_args"]["data_dir"]
         data_types = config_args["train_args"]["data_type"]
         data_type = config_args["train_args"]["specific_type"]
-        # take_mini = config_args["train_args"]["take_mini"]
-        # str_parts = config_args["train_args"]["parts"]
-        # if take_mini != 0:
-        #     str_parts = [part + '_mini.json' for part in str_parts]
-        # else:
-        #     str_parts = [part + '.json' for part in str_parts]
+        take_mini = config_args["train_args"]["take_mini"]
+        str_parts = config_args["train_args"]["parts"]
+        if take_mini != 0:
+            str_parts = [part + '_mini.json' for part in str_parts]
+        else:
+            str_parts = [part + '.json' for part in str_parts]
 
         return [
             datasets.SplitGenerator(
                 name=datasets.Split.TRAIN,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, data_types[data_type], "train.json"),  #str_parts[0]
+                    "filepath": os.path.join(data_dir, data_types[data_type], str_parts[0]),
                     "split": 'train',
                 },
             ),
@@ -85,7 +90,7 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.TEST,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, data_types[data_type], "test.json"),  #str_parts[1]
+                    "filepath": os.path.join(data_dir, data_types[data_type], str_parts[1]),
                     "split": "test",
 
                 },
@@ -94,7 +99,7 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.VALIDATION,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, data_types[data_type], "validation.json"),  #str_parts[3]
+                    "filepath": os.path.join(data_dir, data_types[data_type], str_parts[2]),
                     "split": "validation",
                 },
             ),
@@ -109,6 +114,8 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
             yield index, {
                 "data": [row[data_col]],
                 "labels": [row[label_col]],
+                "title": [row["title"]],
+                "artist": [row["artist"]],
             }
 
 #

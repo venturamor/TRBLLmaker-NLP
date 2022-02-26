@@ -126,7 +126,6 @@ def split_by_songs(songs_json_path, samples_json_path):
     songs = [train_songs, test_songs, validation_songs]
     samps = [train_samps, test_samps, validation_samps]
     for idx in range(len(songs)):
-
         songs[idx].to_json(join(data_dir, dirs[0], str_parts[idx] + '.json'))
         samps[idx].to_json(join(data_dir, dirs[1], str_parts[idx] + '.json'))
 
@@ -139,7 +138,7 @@ if __name__ == '__main__':
     genre = 'final'
     pickle_name = 'final.pickle'
     db_pickle_path = join(pickle_dir, genre, pickle_name)
-    # pickle_2_dataframes(db_pickle_path)
+    pickle_2_dataframes(db_pickle_path)
 
     # split songs
     json_song = 'songs_cleaned.json'  # 'songs_final.json'

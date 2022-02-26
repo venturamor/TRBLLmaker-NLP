@@ -44,7 +44,7 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
     VERSION = datasets.Version("1.1.0")
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="trbll_dataset", version=VERSION, description="TRBLL dataset"),
+        datasets.BuilderConfig(name="trbll_dataset_mini", version=VERSION, description="TRBLL dataset"),
     ]
 
     DEFAULT_CONFIG_NAME = "trbll_dataset"  # It's not mandatory to have a default configuration. Just use one if it make sense.
@@ -54,6 +54,8 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
             {
                 "data": datasets.Sequence(datasets.Value("string")),
                 "labels": datasets.Sequence(datasets.Value("string")),
+                "title": datasets.Value("string"),
+                "artist": datasets.Value("string"),
             }
         )
         return datasets.DatasetInfo(
@@ -103,4 +105,6 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
             yield index, {
                 "data": [row[data_col]],
                 "labels": [row[label_col]],
+                "title": [row["title"]],
+                "artist": [row["artist"]],
             }

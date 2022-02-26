@@ -31,9 +31,34 @@ def postprocess_text(preds, labels):
     return preds, labels
 
 
+def generate_prompts(samples, prompt_type):
+    with open('config.yaml') as f:
+        training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
+    if prompt_type == "constant":
+        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in samples["data"]]
+    elif prompt_type == "song_metadata":
+        # Load the songs and annotations
+        data = ["Explain the next line from the song " + '"' + title[0] + '" by ' + artist[0] + ": " + sentence[0]
+                for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
+    elif prompt_type == "question_context":
+        data = ["question: what is the meaning of " + artist[0] + " in the song " + '"' + title[0] + '"? ' +
+                "context: " + sentence[0]
+                for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
+    else:  # default: no prompt
+        data = samples["data"]
+    return data
+
+
 def preprocess_function(samples, tokenizer, max_input_length=512, max_target_length=512):
-    # fix list of lists (Mor)
-    samples["data"] = [sentence[0] for sentence in samples["data"]]
+    with open('config.yaml') as f:
+        training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
+    if training_args.train_args.prompt.add_prompt:
+        samples["data"] = generate_prompts(samples, prompt_type=training_args.train_args.prompt.prompt_type)
+    else:
+        # fix list of lists
+        samples["data"] = [sentence[0] for sentence in samples["data"]]
+
+    # fix list of lists ( samples["data"] already fixed)
     samples["labels"] = [sentence[0] for sentence in samples["labels"]]
 
     model_inputs = tokenizer(
@@ -47,7 +72,6 @@ def preprocess_function(samples, tokenizer, max_input_length=512, max_target_len
         )
 
     model_inputs["labels"] = labels["input_ids"]
-    # model_inputs["decoder_input_ids"] = labels["input_ids"]  # my addition
     return model_inputs
 
 
@@ -69,9 +93,13 @@ def run_model():
     project_name = training_args.wandb_args.project_name
     entity = training_args.wandb_args.entity
     # initialize wandb to visualize training progress
+
     wandb.init(project=project_name, entity=entity, name=experiment_name)
 
     samples_dataset = datasets.load_dataset(training_args.train_args.dataset_name)
+
+    # todo check if OK and delete after
+    # preprocess_function(samples_dataset, tokenizer)
 
     tokenized_datasets = samples_dataset.map(
         preprocess_function,
@@ -125,6 +153,17 @@ def run_model():
         # ROUGE expects a newline after each sentence
         decoded_preds = ["\n".join(sent_tokenize(pred.strip())) for pred in decoded_preds]
         decoded_labels = ["\n".join(sent_tokenize(label.strip())) for label in decoded_labels]
+        examples_to_print = 10
+        # Print the first examples to the end of training_eval.txt
+        with open("training_eval.txt", "a") as f:
+            f.write("###################Eval#####################:\n")
+            for i in range(examples_to_print):
+                f.write("Prediction: {}\n".format(decoded_preds[i]))
+                f.write("Label: {}\n".format(decoded_labels[i]))
+                f.write("\n\n\n")
+        for i in range(examples_to_print):
+            print(f"Prediction: {decoded_preds[i]}")
+            print(f"Label: {decoded_labels[i]}")
         # Compute ROUGE scores
         result = rouge_score.compute(
             predictions=decoded_preds, references=decoded_labels, use_stemmer=True
@@ -150,7 +189,8 @@ def run_model():
     predictions = trainer.predict(tokenized_datasets["validation"])
     predictions_text = tokenizer.batch_decode(predictions[0], skip_special_tokens=True)
     # Save predictions to file
-    with open(f"{experiment_name}_predictions.txt", "w") as f:
+    with open(f"{experiment_name}_predictions25.txt", "w") as f:
+        f.write("Predictions: \n")
         for index, (song, annotation, prediction) in enumerate(zip(samples_dataset["validation"]["data"],
                                                                    samples_dataset["validation"]["labels"],
                                                                    predictions_text)):
@@ -161,6 +201,10 @@ def run_model():
             f.write("Prediction: " + str(prediction) + "\n")
             f.write("\n")
             f.write("\n")
+
+    # Save the model
+    trainer.save_model(training_args.train_args.results_checkpoints_dir + "/" + experiment_name)
+    print("Saved model to {}".format(training_args.train_args.results_checkpoints_dir + "/" + experiment_name))
 
 
 if __name__ == '__main__':

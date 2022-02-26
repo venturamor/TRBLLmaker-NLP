@@ -13,27 +13,35 @@ data_extraction:
   save_songs_db_every: 20
   token: hUi9AV743dOI_hVP2CBayG51voTzJjCCToU9ef3NnVV9FbpomnY35F2D9ygeMZ9X
 train_args:
-  batch_size: 32
   data_col: text
   data_dir: ./data
   data_type:
   - songs
   - samples
-  dataset_name: TRBLL_dataset.py
+  dataset_name: TRBLL_dataset_mini.py
   eval_steps: 10
   label_col: annotation
   learning_rate: 1.0e-07
   model_name: t5-base
-  num_train_epochs: 5
   parts:
   - train
   - test
   - validation
   save_total_limit: 3
   specific_type: 1
-  take_mini: 0
   test_size: 0.2
   weight_decay: 0.01
+  take_mini: 0
+  dataset_version: 1.1  # 1.1.0 - regular, 1.1.1 - mini
+
+  batch_size: 8
+  num_train_epochs: 1
+  prompt:
+    add_prompt: True
+    prompt_type: question_context # constant, song_metadata, question_context
+    text: "explain:"
+  results_checkpoints_dir: results_checkpoints
+
 wandb_args:
-  entity: "mor_ventura"
+  entity: tokeron #"mor_ventura"
   project_name: "TRBLL_maker"
