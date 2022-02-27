@@ -86,7 +86,7 @@ def run_model():
     model_name = training_args.train_args.model_name
     tokenizer = T5TokenizerFast.from_pretrained(model_name)
     # model = T5Model.from_pretrained(model_name)
-    model = T5ForConditionalGeneration.from_pretrained(model_name)
+    model = T5ForConditionalGeneration.from_pretrained(model_name).cuda()
 
     experiment_name = model_name + "_lr-" + str(learning_rate) + "_bs-" + str(batch_size) +"_date-"+ \
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
