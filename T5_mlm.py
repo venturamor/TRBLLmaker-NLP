@@ -68,9 +68,8 @@ if __name__ == '__main__':
     mlm_dict = prepare_masks(data, labels)
 
     # training T5 on MLM task
-    #
-    # "The <extra_id_0> walks in <extra_id_1> park" -> "<extra_id_0> cute dog <extra_id_1> the <extra_id_2>"
     # data - songs lyrics, annotations - meanings
+    # example: "The <extra_id_0> walks in <extra_id_1> park" -> "<extra_id_0> cute dog <extra_id_1> the <extra_id_2>"
     input_ids = tokenizer([sentence for sentence in mlm_dict['data']['masked_sentences']], return_tensors="pt",
                           max_length=max_input_length, truncation=True,  padding=True).input_ids
     labels_ids = tokenizer([sentence for sentence in mlm_dict['data']['masks_labels']], return_tensors="pt",
