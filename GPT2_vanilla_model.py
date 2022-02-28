@@ -1,6 +1,6 @@
 from config_parser import config_args
 from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model, T5TokenizerFast, GPT2Tokenizer, \
-    GPT2LMHeadModel, Trainer
+    GPT2LMHeadModel, Trainer, GPTNeoForCausalLM
 from transformers import DataCollatorForSeq2Seq
 from transformers import Seq2SeqTrainer
 from transformers import Seq2SeqTrainingArguments
@@ -123,7 +123,9 @@ def run_model():
     tokenizer = GPT2Tokenizer.from_pretrained(model_name,  bos_token='<|startoftext|>', eos_token='<|endoftext|>',
                                               pad_token='<|pad|>')
 
-    model = GPT2LMHeadModel.from_pretrained(model_name).cuda()
+    # model = GPT2LMHeadModel.from_pretrained(model_name).cuda()
+    model = GPTNeoForCausalLM.from_pretrained("EleutherAI/gpt-neo-2.7B").cuda()
+    # model = GPTNeoForCausalLM.from_pretrained("EleutherAI/gpt-neo-1.3B").cuda()
     model.config.update({"max_length": 512})
     model.resize_token_embeddings(len(tokenizer))
 
@@ -229,6 +231,8 @@ def run_model():
         compute_metrics=compute_metrics,
     )
 
+    # trainer.train()
+
     #  Eval the model before training
     for sample in samples_dataset["validation"]:
         print("Strating generation...")
@@ -238,62 +242,49 @@ def run_model():
         artist = sample['artist'][0]
         txt = "question: what is the meaning of " + artist + " in the song " + '"' + title + '"? ' +\
               "context: " + data + '.' + "answer:"
-        txt = '<|startoftext|>' + txt + '<|endoftext|>'
-        generated = tokenizer(txt, return_tensors="pt").input_ids.cuda()
-        sample_outputs = model.generate(generated, do_sample=True, top_k=50,
-                                        max_length=300, top_p=0.95, temperature=2.0, num_return_sequences=5)
+        txt = '<|startoftext|>' + data + '<|endoftext|>'
+        tokenized = tokenizer(txt, return_tensors="pt").input_ids.cuda()
+        sample_outputs = model.generate(tokenized, do_sample=True,# top_k=50, , top_p=0.95
+                                        max_length=100, temperature=0.9, num_return_sequences=5)
         print("Generation done.")
         # Decode generated summaries into text
         # Print index, text, and label
         for i, sample_output in enumerate(sample_outputs):
-            print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
-            print("{}: {}".format(i, label))
-            break
+
+            #  Print to file
+            with open("training_eval - generation - " + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".txt", "a") as f:
+                f.write("{}: {} {}".format(i, "Prediction: ", tokenizer.decode(sample_output, skip_special_tokens=True)))
+                f.write("{}: {} {}".format(i, "Label: ", label))
+                f.write("{}: {} {}".format(i, "Context: ", data))
+                f.write("\n\n\n")
+            #  Print to screen
+            print("{}: {} {}".format(i, "Prediction: ", tokenizer.decode(sample_output, skip_special_tokens=True)))
+            print("{}: {} {}".format(i, "Label: ", label))
+            print("{}: {} {}".format(i, "Context: ", data))
 
 
 
-    trainer.train()
-
-    #  Eval the model after training
-    for sample in samples_dataset["validation"]:
-        print("Strating generation...")
-        data = sample['data'][0]
-        label = sample['labels'][0]
-        title = sample['title'][0]
-        artist = sample['artist'][0]
-        txt = "question: what is the meaning of " + artist + " in the song " + '"' + title + '"? ' +\
-              "context: " + data + '.' + "answer:"
-        txt = '<|startoftext|>' + txt + '<|endoftext|>'
-        generated = tokenizer(txt, return_tensors="pt").input_ids.cuda()
-        sample_outputs = model.generate(generated, do_sample=True, top_k=50,
-                                        max_length=300, top_p=0.95, temperature=0.8, num_return_sequences=5)
-        print("Generation done.")
-        # Decode generated summaries into text
-        # Print index, text, and label
-        for i, sample_output in enumerate(sample_outputs):
-            print("{}: {} {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True), label))
-
-    trainer.evaluate()
-    predictions = trainer.predict(tokenized_validation)
-    predictions_text = tokenizer.batch_decode(predictions[0], skip_special_tokens=True)
-
-    # Save predictions to file
-    with open(f"{experiment_name}_predictions" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".txt", "w") as f:
-        f.write("Predictions: \n")
-        for index, (song, annotation, prediction) in enumerate(zip(samples_dataset["validation"]["data"],
-                                                                   samples_dataset["validation"]["labels"],
-                                                                   predictions_text)):
-            #  Print in seperated lines: index, song, annotation, prediction
-            f.write(f"{index}\n")
-            f.write("Song: " + str(song) + "\n")
-            f.write("Annotation: " + str(annotation) + "\n")
-            f.write("Prediction: " + str(prediction) + "\n")
-            f.write("\n")
-            f.write("\n")
-
-    # Save the model
-    trainer.save_model(training_args.train_args.results_checkpoints_dir + "/" + experiment_name)
-    print("Saved model to {}".format(training_args.train_args.results_checkpoints_dir + "/" + experiment_name))
+    # trainer.evaluate()
+    # predictions = trainer.predict(tokenized_validation)
+    # predictions_text = tokenizer.batch_decode(predictions[0], skip_special_tokens=True)
+    #
+    # # Save predictions to file
+    # with open(f"{experiment_name}_predictions" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".txt", "w") as f:
+    #     f.write("Predictions: \n")
+    #     for index, (song, annotation, prediction) in enumerate(zip(samples_dataset["validation"]["data"],
+    #                                                                samples_dataset["validation"]["labels"],
+    #                                                                predictions_text)):
+    #         #  Print in seperated lines: index, song, annotation, prediction
+    #         f.write(f"{index}\n")
+    #         f.write("Song: " + str(song) + "\n")
+    #         f.write("Annotation: " + str(annotation) + "\n")
+    #         f.write("Prediction: " + str(prediction) + "\n")
+    #         f.write("\n")
+    #         f.write("\n")
+    #
+    # # Save the model
+    # trainer.save_model(training_args.train_args.results_checkpoints_dir + "/" + experiment_name)
+    # print("Saved model to {}".format(training_args.train_args.results_checkpoints_dir + "/" + experiment_name))
 
 
 if __name__ == '__main__':
