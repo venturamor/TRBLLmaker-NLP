@@ -32,7 +32,7 @@ train_args:
   test_size: 0.2
   weight_decay: 0.01
   take_mini: 1
-  dataset_version: 1.1  # 1.1.0 - regular, 1.1.1 - mini
+  dataset_version: 1.1  # 1.1.0 - regular, 1.1.* - mini
 
   batch_size: 4
   num_train_epochs: 4
