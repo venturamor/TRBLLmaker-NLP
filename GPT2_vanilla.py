@@ -1,36 +1,86 @@
 from transformers import GPT2LMHeadModel, GPT2Tokenizer,  GPTNeoForCausalLM
 import datasets
 import torch
-
-model_name = "EleutherAI/gpt-neo-1.3B"  # "gpt2"
-model = GPTNeoForCausalLM.from_pretrained(model_name)
-tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+import docx
+import datetime
 
 
-num_samples = 100
-dataset_name = 'TRBLL_dataset_mini.py'
-samples_dataset = datasets.load_dataset(dataset_name)
-data = samples_dataset['test']['data'][:num_samples]
-labels = samples_dataset['test']['labels'][:num_samples]
+def generate_prompts(lyrics, meaning, artist, title, prompt_type):
+    if prompt_type == "lyrics_meaning":
+        data = "lyrics: {}. meaning:".format(lyrics)
+    elif prompt_type == "song_metadata":
+        # Load the songs and annotations
+        data = 'Explain the next line from the song "{}", written by {}. Explanation:'.format(title, artist)
+    elif prompt_type == "question_context":
+        data = 'question: what is the meaning of {} in the song "{}", ' \
+               'written by {}? context: {}'.format(meaning, title, artist, lyrics)
+    else:  # None: no prompt
+        data = lyrics
+    return data
 
+
+models_names = ['EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B'] # 'gpt2-medium'
+prompt_types = ['lyrics_meaning', 'song_metadata', 'question_context']
 max_input_length = 512
-max_target_length = 100
-input_ids = tokenizer(data[3][0], return_tensors="pt").input_ids
+max_target_length = 512
+temperature = 0.9
+N = 16
+num_return_sequences = 8
+torch.manual_seed(42)
 
+for model_name in models_names:
+    tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+    if model_name == 'gpt2-medium':
+        model = GPT2LMHeadModel.from_pretrained
+    else:
+        model = GPTNeoForCausalLM.from_pretrained(model_name)
+    print("Model: {} loaded".format(model_name))
 
+    # load datasets
+    dataset_name = 'TRBLL_dataset.py'
+    samples_dataset = datasets.load_dataset(dataset_name)['train']
+    print("Loaded {} samples from {}".format(len(samples_dataset), dataset_name))
 
-gen_tokens = model.generate(
-    input_ids,
-    do_sample=True,
-    temperature=0.9,
-    max_length=max_target_length,
-)
-gen_text = tokenizer.batch_decode(gen_tokens)[0]
-print('lyrics: {}'.format(data[3][0]), '\n',
-      'label meaning: {}'.format(labels[3][0]), '\n',
-      'generated: {}'.format(gen_text), '\n',)
+    # choose random N samples from the dataset
+    samples = torch.randint(0, len(samples_dataset['data']) - 1, (N,))
 
-print('done')
+    # create a doc file to write the generated prompts
+    doc = docx.Document()
+    doc.add_heading('Predicted annotations by different models, prompts and temperature', 0)
+
+    for index in samples:
+        lyrics = samples_dataset['data'][index][0]
+        meaning = samples_dataset['labels'][index][0]
+        artist = samples_dataset['artist'][index][0]
+        title = samples_dataset['title'][index][0]
+
+        for prompt_type in prompt_types:
+            print("Generating prompts for {}".format(prompt_type))
+            txt = generate_prompts(lyrics, meaning, artist, title, prompt_type)
+            input_ids = tokenizer(txt, return_tensors="pt").input_ids
+
+            print("Generating {} prompts for {}".format(num_return_sequences, txt))
+            gen_tokens = model.generate(
+                input_ids,
+                do_sample=True,
+                temperature=temperature,
+                max_length=max_target_length,
+                num_return_sequences=num_return_sequences,
+                # top_k=50,
+                # top_p=0.95,
+            )
+            gen_text = tokenizer.batch_decode(gen_tokens)[0]
+            print("Generated prompt: {}".format(gen_text))
+            for i, sample_output in enumerate(gen_tokens):
+                gen_text = tokenizer.decode(sample_output)
+                # Save to docx file
+                para = doc.add_paragraph("Model: {}, prompt: {}, temperature: {}"
+                                         .format(model_name, prompt_type, temperature))
+                para.add_run("lyrics: {}. meaning: {} \n".format(lyrics, meaning))
+                para.add_run("Gerenated text: {} \n".format(gen_text)).bold = True
+                print("Generated text: {}".format(gen_text))
+    doc.save('predictions_before_training_{}.docx'.format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    print("Predictions saved to file")
 
 
 # # -----------------------------------------------

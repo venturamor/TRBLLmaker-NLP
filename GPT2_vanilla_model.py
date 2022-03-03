@@ -1,6 +1,6 @@
 from config_parser import config_args
 from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model, T5TokenizerFast, GPT2Tokenizer, \
-    GPT2LMHeadModel, Trainer
+    GPT2LMHeadModel, Trainer, GPTNeoForCausalLM
 from transformers import DataCollatorForSeq2Seq
 from transformers import Seq2SeqTrainer
 from transformers import Seq2SeqTrainingArguments
@@ -219,40 +219,27 @@ def run_model():
         artist = sample['artist'][0]
         txt = "question: what is the meaning of " + artist + " in the song " + '"' + title + '"? ' +\
               "context: " + data + '.' + "answer:"
-        txt = '<|startoftext|>' + txt + '<|endoftext|>'
-        generated = tokenizer(txt, return_tensors="pt").input_ids.cuda()
-        sample_outputs = model.generate(generated, do_sample=True, top_k=50,
-                                        max_length=300, top_p=0.95, temperature=2.0, num_return_sequences=5)
+        txt = '<|startoftext|>' + data + '<|endoftext|>'
+        tokenized = tokenizer(txt, return_tensors="pt").input_ids.cuda()
+        sample_outputs = model.generate(tokenized, do_sample=True,# top_k=50, , top_p=0.95
+                                        max_length=100, temperature=0.9, num_return_sequences=5)
         print("Generation done.")
         # Decode generated summaries into text
         # Print index, text, and label
         for i, sample_output in enumerate(sample_outputs):
-            print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
-            print("{}: {}".format(i, label))
-            break
+
+            #  Print to file
+            with open("training_eval - generation - " + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".txt", "a") as f:
+                f.write("{}: {} {}".format(i, "Prediction: ", tokenizer.decode(sample_output, skip_special_tokens=True)))
+                f.write("{}: {} {}".format(i, "Label: ", label))
+                f.write("{}: {} {}".format(i, "Context: ", data))
+                f.write("\n\n\n")
+            #  Print to screen
+            print("{}: {} {}".format(i, "Prediction: ", tokenizer.decode(sample_output, skip_special_tokens=True)))
+            print("{}: {} {}".format(i, "Label: ", label))
+            print("{}: {} {}".format(i, "Context: ", data))
 
 
-
-    trainer.train()
-
-    #  Eval the model after training
-    for sample in samples_dataset["validation"]:
-        print("Strating generation...")
-        data = sample['data'][0]
-        label = sample['labels'][0]
-        title = sample['title'][0]
-        artist = sample['artist'][0]
-        txt = "question: what is the meaning of " + artist + " in the song " + '"' + title + '"? ' +\
-              "context: " + data + '.' + "answer:"
-        txt = '<|startoftext|>' + txt + '<|endoftext|>'
-        generated = tokenizer(txt, return_tensors="pt").input_ids.cuda()
-        sample_outputs = model.generate(generated, do_sample=True, top_k=50,
-                                        max_length=300, top_p=0.95, temperature=0.8, num_return_sequences=5)
-        print("Generation done.")
-        # Decode generated summaries into text
-        # Print index, text, and label
-        for i, sample_output in enumerate(sample_outputs):
-            print("{}: {} {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True), label))
 
     # trainer.evaluate()
     # predictions = trainer.predict(tokenized_validation)
