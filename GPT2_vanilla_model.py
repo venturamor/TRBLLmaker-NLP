@@ -33,42 +33,23 @@ def postprocess_text(preds, labels):
     return preds, labels
 
 
-def generate_prompts(samples, prompt_type, validation=False):
+def generate_prompts(samples, prompt_type):
     with open('config.yaml') as f:
         training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
     if prompt_type == "constant":
-        if not validation:
-            data = [training_args.train_args.prompt.text + " " + sentence[0] + '. ' + label[0]
-                    for (sentence, label) in zip(samples["data"], samples["labels"])]
-        else:
-            data = [training_args.train_args.prompt.text + " " + sentence[0] + '.'
-                    for sentence in samples["data"]]
+        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in samples["data"]]
     elif prompt_type == "song_metadata":
         # Load the songs and annotations
-        if not validation:
-            data = ["Explain the next line from the song " + '"' + title[0] + '" by ' + artist[0] + ": "
-                    + sentence[0] + '. ' + label[0] for (artist, title, sentence, label) in
-                    zip(samples["artist"], samples["title"], samples["data"], samples["labels"])]
-        else:
-            data = ["Explain the next line from the song " + '"' + title[0] + '" by ' + artist[0] + ": "
-                    + sentence[0] + '.' for (artist, title, sentence) in
-                    zip(samples["artist"], samples["title"], samples["data"])]
+        data = ["Explain the next line from the song " + '"' + title[0] + '" by ' + artist[0] + ": " + sentence[0]
+                for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
     elif prompt_type == "question_context":
-        if not validation:
-            data = ["question: what is the meaning of " + artist[0] + " in the song " + '"' + title[0] + '"? ' +
-                    "context: " + sentence[0] + '. answer:' + label[0]
-                    for (artist, title, sentence, label) in
-                    zip(samples["artist"], samples["title"], samples["data"], samples["labels"])]
-        else:
-            data = ["question: what is the meaning of " + artist[0] + " in the song " + '"' + title[0] + '"? ' +
-                    "context: " + sentence[0] + '.' + "answer:"
-                    for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
+        data = ["question: what is the meaning of " + artist[0] + " in the song " + '"' + title[0] + '"? ' +
+                "context: " + sentence[0]
+                for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
     else:  # default: no prompt
-        if not validation:
-            data = samples["data"] + samples["labels"]
-        else:
-            data = samples["data"]
+        data = samples["data"]
     return data
+
 
 
 def preprocess_function_gpt2(samples, tokenizer, max_input_length=512, max_target_length=512):
@@ -273,27 +254,27 @@ def run_model():
         for i, sample_output in enumerate(sample_outputs):
             print("{}: {} {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True), label))
 
-    trainer.evaluate()
-    predictions = trainer.predict(tokenized_validation)
-    predictions_text = tokenizer.batch_decode(predictions[0], skip_special_tokens=True)
-
-    # Save predictions to file
-    with open(f"{experiment_name}_predictions" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".txt", "w") as f:
-        f.write("Predictions: \n")
-        for index, (song, annotation, prediction) in enumerate(zip(samples_dataset["validation"]["data"],
-                                                                   samples_dataset["validation"]["labels"],
-                                                                   predictions_text)):
-            #  Print in seperated lines: index, song, annotation, prediction
-            f.write(f"{index}\n")
-            f.write("Song: " + str(song) + "\n")
-            f.write("Annotation: " + str(annotation) + "\n")
-            f.write("Prediction: " + str(prediction) + "\n")
-            f.write("\n")
-            f.write("\n")
-
-    # Save the model
-    trainer.save_model(training_args.train_args.results_checkpoints_dir + "/" + experiment_name)
-    print("Saved model to {}".format(training_args.train_args.results_checkpoints_dir + "/" + experiment_name))
+    # trainer.evaluate()
+    # predictions = trainer.predict(tokenized_validation)
+    # predictions_text = tokenizer.batch_decode(predictions[0], skip_special_tokens=True)
+    #
+    # # Save predictions to file
+    # with open(f"{experiment_name}_predictions" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".txt", "w") as f:
+    #     f.write("Predictions: \n")
+    #     for index, (song, annotation, prediction) in enumerate(zip(samples_dataset["validation"]["data"],
+    #                                                                samples_dataset["validation"]["labels"],
+    #                                                                predictions_text)):
+    #         #  Print in seperated lines: index, song, annotation, prediction
+    #         f.write(f"{index}\n")
+    #         f.write("Song: " + str(song) + "\n")
+    #         f.write("Annotation: " + str(annotation) + "\n")
+    #         f.write("Prediction: " + str(prediction) + "\n")
+    #         f.write("\n")
+    #         f.write("\n")
+    #
+    # # Save the model
+    # trainer.save_model(training_args.train_args.results_checkpoints_dir + "/" + experiment_name)
+    # print("Saved model to {}".format(training_args.train_args.results_checkpoints_dir + "/" + experiment_name))
 
 
 if __name__ == '__main__':

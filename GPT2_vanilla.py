@@ -17,18 +17,7 @@ max_input_length = 512
 max_target_length = 100
 input_ids = tokenizer(data[3][0], return_tensors="pt").input_ids
 
-# input_ids = tokenizer([sentence[0] for sentence in data[0]], return_tensors="pt",
-#                       max_length=max_input_length, truncation=True, padding=True).input_ids
-# inputs = tokenizer(data[0][0], return_tensors="pt",
-#                       max_length=max_input_length,
-#                       truncation=True)
 
-# generation_output = model.generate(**inputs, return_dict_in_generate=True, output_scores=True, max_length=100)
-# generated_pred = tokenizer.batch_decode(generation_output['sequences'], skip_special_tokens=True)
-
-# outputs = model(**inputs, labels=inputs["input_ids"])
-# loss = outputs.loss
-# logits = outputs.logits
 
 gen_tokens = model.generate(
     input_ids,
