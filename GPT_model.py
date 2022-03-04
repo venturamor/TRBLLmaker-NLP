@@ -54,7 +54,8 @@ class TRBLLDataset(Dataset):
 def load_data_and_split():
     # this dataset will be taken only from train!
     # json_path = r'C:\לימודים אקדמיים\תואר שני\עיבוד שפה טבעית\Final Project - TRBLLmaker\TRBLLmaker-NLP\data\samples\train.json'
-    json_path = r'/home/student/mor_nlp/data/samples/train.json'
+    json_path = r'/home/student/mor_nlp/data/samples/validation_mini.json'
+    # json_path = r'/home/student/mor_nlp/data/samples/train.json'
     df_samples_orig = pd.read_json(json_path)
     data_col = "text"
     label_col = "annotation"
@@ -84,7 +85,7 @@ def run_inference(tokenizer, model, test_dataset, prompts):
     predicted_text = []
 
     top_k = 50
-    max_target_length = 50
+    max_target_length = 128
     top_p = 0.9
     temprature = 0.5
     num_return_sequence = 0
@@ -92,9 +93,9 @@ def run_inference(tokenizer, model, test_dataset, prompts):
     print_every = 10
     count = 0
 
-    decode_method = 'beam_search'
+    decode_method = 'beam search'
     decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
-    assert decode_method in decode_methods, 'Decode method should be one of the list'
+    # assert decode_method in decode_methods, 'Decode method should be one of the list'
 
     for txt, label in tqdm(zip(test_dataset[0], test_dataset[1])):
         count += 1
@@ -249,35 +250,64 @@ if __name__ == '__main__':
     # validation_dataset = (X_val, y_val)
     validation_dataset = TRBLLDataset(X_val, y_val, tokenizer, prompts, val_flag=True)
 
+    # # inference before training
+    # df_inference_before = run_inference(tokenizer, model, test_dataset, prompts)
+
     # training args
-    training_args = Seq2SeqTrainingArguments(output_dir=f"{model_name}-finetuned-vanilla1",
-                                             evaluation_strategy="steps",
-                                             eval_steps=config_args.train_args.eval_steps,
-                                             logging_strategy="steps",
-                                             logging_steps=config_args.train_args.eval_steps,
-                                             # load_best_model_at_end=True,
-                                             learning_rate=learning_rate,
-                                             per_device_train_batch_size=batch_size,
-                                             per_device_eval_batch_size=batch_size,
-                                             weight_decay=config_args.train_args.weight_decay,
-                                             num_train_epochs=num_train_epochs,
-                                             # warmup_steps=100,
-                                             predict_with_generate=True,
-                                             save_total_limit=config_args.train_args.save_total_limit,
-                                             report_to="wandb",
-                                             run_name=experiment_name)
+    training_args = TrainingArguments(output_dir=f"{model_name}-finetuned-vanilla1",
+                                      evaluation_strategy="steps",
+                                      eval_steps=config_args.train_args.eval_steps,
+                                      logging_strategy="steps",
+                                      logging_steps=config_args.train_args.eval_steps,
+                                      # load_best_model_at_end=True,
+                                      learning_rate=learning_rate,
+                                      per_device_train_batch_size=batch_size,
+                                      per_device_eval_batch_size=batch_size,
+                                      weight_decay=config_args.train_args.weight_decay,
+                                      num_train_epochs=num_train_epochs,
+                                      # warmup_steps=100,
+                                      # predict_with_generate=True,
+                                      save_total_limit=config_args.train_args.save_total_limit,
+                                      report_to="wandb",
+                                      run_name=experiment_name)
+    # training_args = Seq2SeqTrainingArguments(output_dir=f"{model_name}-finetuned-vanilla1",
+    #                                          evaluation_strategy="steps",
+    #                                          eval_steps=config_args.train_args.eval_steps,
+    #                                          logging_strategy="steps",
+    #                                          logging_steps=config_args.train_args.eval_steps,
+    #                                          # load_best_model_at_end=True,
+    #                                          learning_rate=learning_rate,
+    #                                          per_device_train_batch_size=batch_size,
+    #                                          per_device_eval_batch_size=batch_size,
+    #                                          weight_decay=config_args.train_args.weight_decay,
+    #                                          num_train_epochs=num_train_epochs,
+    #                                          # warmup_steps=100,
+    #                                          predict_with_generate=True,
+    #                                          save_total_limit=config_args.train_args.save_total_limit,
+    #                                          report_to="wandb",
+    #                                          run_name=experiment_name)
 
     # Trainer
-    trainer = Seq2SeqTrainer(model=model,
-                             args=training_args,
-                             train_dataset=train_dataset,
-                             eval_dataset=validation_dataset,
-                             data_collator=lambda data: {'input_ids': torch.stack([f[0] for f in data]),
-                                                         'attention_mask': torch.stack([f[1] for f in data]),
-                                                         'labels': torch.stack([f[0] for f in data])},
-                             compute_metrics=compute_metrics)
+    trainer = Trainer(model=model,
+                      args=training_args,
+                      train_dataset=train_dataset,
+                      eval_dataset=validation_dataset,
+                      data_collator=lambda data: {'input_ids': torch.stack([f[0] for f in data]),
+                                                  'attention_mask': torch.stack([f[1] for f in data]),
+                                                  'labels': torch.stack([f[0] for f in data])},
+                      compute_metrics=compute_metrics)
+    # trainer = Seq2SeqTrainer(model=model,
+    #                          args=training_args,
+    #                          train_dataset=train_dataset,
+    #                          eval_dataset=validation_dataset,
+    #                          data_collator=lambda data: {'input_ids': torch.stack([f[0] for f in data]),
+    #                                                      'attention_mask': torch.stack([f[1] for f in data]),
+    #                                                      'labels': torch.stack([f[0] for f in data])},
+    #                          compute_metrics=compute_metrics)
 
-    trainer.train()
+    # trainer.train()
+
+    trainer.evaluate()
 
     # test
 
