@@ -22,11 +22,11 @@ def generate_prompts(lyrics, meaning, artist, title, prompt_type):
 models_names = ['EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B'] # 'gpt2-medium'
 prompt_types = ['lyrics_meaning', 'song_metadata', 'question_context']
 max_input_length = 512
-max_target_length = 512
+max_target_length = 128
 temperature = 0.9
-N = 16
-num_return_sequences = 8
-torch.manual_seed(42)
+N = 2
+num_return_sequences = 2
+torch.manual_seed(21)
 
 for model_name in models_names:
     tokenizer = GPT2Tokenizer.from_pretrained(model_name)
@@ -51,8 +51,8 @@ for model_name in models_names:
     for index in samples:
         lyrics = samples_dataset['data'][index][0]
         meaning = samples_dataset['labels'][index][0]
-        artist = samples_dataset['artist'][index][0]
-        title = samples_dataset['title'][index][0]
+        artist = 'artist' #samples_dataset['artist'][index][0]
+        title = 'title' #samples_dataset['title'][index][0]
 
         for prompt_type in prompt_types:
             print("Generating prompts for {}".format(prompt_type))

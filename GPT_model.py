@@ -87,13 +87,13 @@ def run_inference(tokenizer, model, test_dataset, prompts):
     top_k = 50
     max_target_length = 128
     top_p = 0.9
-    temprature = 0.5
-    num_return_sequence = 0
+    temprature = 0.9
+    num_return_sequence = 1
 
     print_every = 10
     count = 0
 
-    decode_method = 'beam search'
+    decode_method = 'sampling'
     decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
     # assert decode_method in decode_methods, 'Decode method should be one of the list'
 
@@ -108,7 +108,7 @@ def run_inference(tokenizer, model, test_dataset, prompts):
         if decode_method == 'greedy':
             # greedy
             outputs = model.generate(tokenized_txt, max_length=max_target_length,
-                                     temprature=temprature, num_return_sequence=num_return_sequence)
+                                     temperature=temprature)  # num_return_sequence=num_return_sequence
         elif decode_method == 'beam search':
             # beam search with penalty on repeat
             outputs = model.generate(tokenized_txt, max_length=max_target_length,
@@ -116,8 +116,8 @@ def run_inference(tokenizer, model, test_dataset, prompts):
                                      no_repeat_ngram_size=2)
         elif decode_method == 'sampling':
             # sampling
-            outputs = model.generate(tokenized_txt, do_sample=True, top_k=0, max_length=max_target_length,
-                                     temprature=temprature)
+            outputs = model.generate(tokenized_txt, do_sample=True, max_length=max_target_length,
+                                     temperature=temprature)  # top_k=0,
         elif decode_method == 'top-k sampling':
             # top-k sampling
             outputs = model.generate(tokenized_txt, do_sample=True, top_k=50, max_length=max_target_length,
@@ -251,7 +251,7 @@ if __name__ == '__main__':
     validation_dataset = TRBLLDataset(X_val, y_val, tokenizer, prompts, val_flag=True)
 
     # # inference before training
-    # df_inference_before = run_inference(tokenizer, model, test_dataset, prompts)
+    df_inference_before = run_inference(tokenizer, model, test_dataset, prompts)
 
     # training args
     training_args = TrainingArguments(output_dir=f"{model_name}-finetuned-vanilla1",
