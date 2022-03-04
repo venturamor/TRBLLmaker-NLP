@@ -33,42 +33,23 @@ def postprocess_text(preds, labels):
     return preds, labels
 
 
-def generate_prompts(samples, prompt_type, validation=False):
+def generate_prompts(samples, prompt_type):
     with open('config.yaml') as f:
         training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
     if prompt_type == "constant":
-        if not validation:
-            data = [training_args.train_args.prompt.text + " " + sentence[0] + '. ' + label[0]
-                    for (sentence, label) in zip(samples["data"], samples["labels"])]
-        else:
-            data = [training_args.train_args.prompt.text + " " + sentence[0] + '.'
-                    for sentence in samples["data"]]
+        data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in samples["data"]]
     elif prompt_type == "song_metadata":
         # Load the songs and annotations
-        if not validation:
-            data = ["Explain the next line from the song " + '"' + title[0] + '" by ' + artist[0] + ": "
-                    + sentence[0] + '. ' + label[0] for (artist, title, sentence, label) in
-                    zip(samples["artist"], samples["title"], samples["data"], samples["labels"])]
-        else:
-            data = ["Explain the next line from the song " + '"' + title[0] + '" by ' + artist[0] + ": "
-                    + sentence[0] + '.' for (artist, title, sentence) in
-                    zip(samples["artist"], samples["title"], samples["data"])]
+        data = ["Explain the next line from the song " + '"' + title[0] + '" by ' + artist[0] + ": " + sentence[0]
+                for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
     elif prompt_type == "question_context":
-        if not validation:
-            data = ["question: what is the meaning of " + artist[0] + " in the song " + '"' + title[0] + '"? ' +
-                    "context: " + sentence[0] + '. answer:' + label[0]
-                    for (artist, title, sentence, label) in
-                    zip(samples["artist"], samples["title"], samples["data"], samples["labels"])]
-        else:
-            data = ["question: what is the meaning of " + artist[0] + " in the song " + '"' + title[0] + '"? ' +
-                    "context: " + sentence[0] + '.' + "answer:"
-                    for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
+        data = ["question: what is the meaning of " + artist[0] + " in the song " + '"' + title[0] + '"? ' +
+                "context: " + sentence[0]
+                for (artist, title, sentence) in zip(samples["artist"], samples["title"], samples["data"])]
     else:  # default: no prompt
-        if not validation:
-            data = samples["data"] + samples["labels"]
-        else:
-            data = samples["data"]
+        data = samples["data"]
     return data
+
 
 
 def preprocess_function_gpt2(samples, tokenizer, max_input_length=512, max_target_length=512):
@@ -123,9 +104,7 @@ def run_model():
     tokenizer = GPT2Tokenizer.from_pretrained(model_name,  bos_token='<|startoftext|>', eos_token='<|endoftext|>',
                                               pad_token='<|pad|>')
 
-    # model = GPT2LMHeadModel.from_pretrained(model_name).cuda()
-    model = GPTNeoForCausalLM.from_pretrained("EleutherAI/gpt-neo-2.7B").cuda()
-    # model = GPTNeoForCausalLM.from_pretrained("EleutherAI/gpt-neo-1.3B").cuda()
+    model = GPT2LMHeadModel.from_pretrained(model_name).cuda()
     model.config.update({"max_length": 512})
     model.resize_token_embeddings(len(tokenizer))
 
@@ -230,8 +209,6 @@ def run_model():
         tokenizer=tokenizer,
         compute_metrics=compute_metrics,
     )
-
-    # trainer.train()
 
     #  Eval the model before training
     for sample in samples_dataset["validation"]:

@@ -35,7 +35,7 @@ train_args:
   dataset_version: 1.1  # 1.1.0 - regular, 1.1.* - mini
 
   batch_size: 4
-  num_train_epochs: 4
+  num_train_epochs: 2
   prompt:
     add_prompt: True
     prompt_type: question_context # constant, song_metadata, question_context
@@ -43,5 +43,5 @@ train_args:
   results_checkpoints_dir: results_checkpoints
 
 wandb_args:
-  entity: tokeron #"mor_ventura"
+  entity: "mor_ventura"
   project_name: "TRBLL_maker"
