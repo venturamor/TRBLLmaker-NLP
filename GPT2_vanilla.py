@@ -3,23 +3,25 @@ import datasets
 import torch
 import docx
 import datetime
-
+from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model, T5TokenizerFast, GPT2Tokenizer, \
+    GPT2LMHeadModel, Trainer, GPTNeoForCausalLM, TrainingArguments
+from transformers import DataCollatorForSeq2Seq
 
 def generate_prompts(lyrics, meaning, artist, title, prompt_type):
     if prompt_type == "lyrics_meaning":
-        data = "lyrics: {}. meaning:".format(lyrics)
+        data = "lyrics: {}.\n meaning:".format(lyrics)
     elif prompt_type == "song_metadata":
         # Load the songs and annotations
-        data = 'Explain the next line from the song "{}", written by {}. Explanation:'.format(title, artist)
+        data = 'Explain the song "{}", written by {}.\n Lyrics: {}.\n Explanation:'.format(title, artist, lyrics)
     elif prompt_type == "question_context":
         data = 'question: what is the meaning of {} in the song "{}", ' \
-               'written by {}? context: {}'.format(meaning, title, artist, lyrics)
+               'written by {}?\n context: {}.\n answer:'.format(meaning, title, artist, lyrics)
     else:  # None: no prompt
         data = lyrics
     return data
 
 
-models_names = ['EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B'] # 'gpt2-medium'
+models_names = ['gpt2']#'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']  # 'gpt2-medium'
 prompt_types = ['lyrics_meaning', 'song_metadata', 'question_context']
 max_input_length = 512
 max_target_length = 128
@@ -30,8 +32,8 @@ torch.manual_seed(21)
 
 for model_name in models_names:
     tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-    if model_name == 'gpt2-medium':
-        model = GPT2LMHeadModel.from_pretrained
+    if model_name == 'gpt2' or model_name =='gpt2-medium':
+        model = GPT2LMHeadModel.from_pretrained(model_name)
     else:
         model = GPTNeoForCausalLM.from_pretrained(model_name)
     print("Model: {} loaded".format(model_name))
@@ -60,6 +62,7 @@ for model_name in models_names:
             input_ids = tokenizer(input_prompt, return_tensors="pt").input_ids
 
             print("Generating {} prompts for {}".format(num_return_sequences, input_prompt))
+
             gen_tokens = model.generate(
                 input_ids,
                 do_sample=True,
@@ -79,9 +82,9 @@ for model_name in models_names:
                 para.add_run("lyrics: {}. meaning: {} \n\n".format(lyrics, meaning))
                 # Print the generated prompt highlighted with green color
                 for generated in generated_list:
-                    para.add_run("Gerenated text: {} \n\n\n".format(generated.split(input_prompt)[1]))\
-                        .font.highlight_color = docx.enum.text.WD_COLOR_INDEX.GREEN
-                    print("Generated text: {}".format(generated.split(input_prompt)[1]))
+                    para.add_run("Gerenated text:\n").font.highlight_color = docx.enum.text.WD_COLOR_INDEX.RED
+                    para.add_run("{} \n\n\n".format(generated)).font.highlight_color = docx.enum.text.WD_COLOR_INDEX.GREEN
+                    print("Generated text: {}".format(generated))
     doc.save('predictions_before_training_{}.docx'.format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
     print("Predictions saved to file")
     print("Done")
