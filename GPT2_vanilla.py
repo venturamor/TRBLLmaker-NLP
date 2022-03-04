@@ -56,10 +56,10 @@ for model_name in models_names:
 
         for prompt_type in prompt_types:
             print("Generating prompts for {}".format(prompt_type))
-            txt = generate_prompts(lyrics, meaning, artist, title, prompt_type)
-            input_ids = tokenizer(txt, return_tensors="pt").input_ids
+            input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type)
+            input_ids = tokenizer(input_prompt, return_tensors="pt").input_ids
 
-            print("Generating {} prompts for {}".format(num_return_sequences, txt))
+            print("Generating {} prompts for {}".format(num_return_sequences, input_prompt))
             gen_tokens = model.generate(
                 input_ids,
                 do_sample=True,
@@ -69,67 +69,19 @@ for model_name in models_names:
                 # top_k=50,
                 # top_p=0.95,
             )
-            gen_text = tokenizer.batch_decode(gen_tokens)[0]
-            print("Generated prompt: {}".format(gen_text))
+            generated_list = tokenizer.batch_decode(gen_tokens)
+            print("Generated prompt: {}".format(input_prompt))
             for i, sample_output in enumerate(gen_tokens):
-                gen_text = tokenizer.decode(sample_output)
+                gen_text = tokenizer.decode(sample_output, skip_special_tokens=True)
                 # Save to docx file
-                para = doc.add_paragraph("Model: {}, prompt: {}, temperature: {}"
+                para = doc.add_paragraph("Model: {}, prompt: {}, temperature: {} \n\n"
                                          .format(model_name, prompt_type, temperature))
-                para.add_run("lyrics: {}. meaning: {} \n".format(lyrics, meaning))
-                para.add_run("Gerenated text: {} \n".format(gen_text)).bold = True
-                print("Generated text: {}".format(gen_text))
+                para.add_run("lyrics: {}. meaning: {} \n\n".format(lyrics, meaning))
+                # Print the generated prompt highlighted with green color
+                for generated in generated_list:
+                    para.add_run("Gerenated text: {} \n\n\n".format(generated.split(input_prompt)[1]))\
+                        .font.highlight_color = docx.enum.text.WD_COLOR_INDEX.GREEN
+                    print("Generated text: {}".format(generated.split(input_prompt)[1]))
     doc.save('predictions_before_training_{}.docx'.format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
     print("Predictions saved to file")
-
-
-# # -----------------------------------------------
-# # https://github.com/huggingface/transformers/issues/5942
-# class GPT2FinetunedWithNgrams(GPT2LMHeadModel):
-#     def __init__(self, config):
-#         super().__init__(config)
-#         self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-#
-#     def forward(
-#             self,
-#             input_ids=None,
-#             past=None,
-#             attention_mask=None,
-#             token_type_ids=None,
-#             position_ids=None,
-#             head_mask=None,
-#             inputs_embeds=None,
-#             labels=None,
-#             use_cache=True,
-#     ):
-#         temperature = 0.85
-#         tmp_input_ids = input_ids
-#         max_gen_length = 30
-#         counter = 0
-#         orig_input_str = self.tokenizer.decode(input_ids[0], skip_special_tokens=True)
-#         strs_to_join = orig_input_str.split()
-#         while counter < max_gen_length:
-#             transformer_outputs = self.transformer(
-#                 tmp_input_ids,
-#                 past=past,
-#                 attention_mask=attention_mask,
-#                 token_type_ids=token_type_ids,
-#                 position_ids=position_ids,
-#                 head_mask=head_mask,
-#                 inputs_embeds=inputs_embeds,
-#                 use_cache=use_cache,
-#             )
-#
-#             hidden_states = transformer_outputs[0]
-#             lm_logits = self.lm_head(hidden_states) / (temperature)
-#             last_token = lm_logits[:, -1]
-#             last_token_softmax = torch.softmax(last_token, dim=-1).squeeze()
-#
-#             next_token = torch.argmax(last_token_softmax).tolist()
-#             next_gen_token_str = self.tokenizer.decode(next_token, clean_up_tokenization_spaces=True).strip()
-#             strs_to_join.append(next_gen_token_str)
-#
-#             new_str_input = ' '.join(strs_to_join)
-#             tmp_input_ids = self.tokenizer.encode(new_str_input, return_tensors='pt')
-#             counter += 1
-#         return new_str_input
+    print("Done")
