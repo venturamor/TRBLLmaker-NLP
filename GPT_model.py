@@ -54,7 +54,7 @@ class TRBLLDataset(Dataset):
 def load_data_and_split():
     # this dataset will be taken only from train!
     # json_path = r'C:\לימודים אקדמיים\תואר שני\עיבוד שפה טבעית\Final Project - TRBLLmaker\TRBLLmaker-NLP\data\samples\train.json'
-    json_path = r'/home/student/mor_nlp/data/samples/validation_mini.json'
+    json_path = r'/home/tok/TRBLLmaker/data/samples/validation_mini.json'
     # json_path = r'/home/student/mor_nlp/data/samples/train.json'
     df_samples_orig = pd.read_json(json_path)
     data_col = "text"
@@ -306,6 +306,12 @@ if __name__ == '__main__':
     #                          compute_metrics=compute_metrics)
 
     # trainer.train()
+
+    labels = validation_dataset.labels
+    input_ids = validation_dataset.input_ids
+    predictions = model.generate(input_ids, num_return_sequences=1)
+    generated_list = tokenizer.batch_decode(predictions)
+    compute_metrics(predictions, labels)
 
     trainer.evaluate()
 
