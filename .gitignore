@@ -136,3 +136,5 @@ config.yaml
 *.docx
 *.zip
 transformers/
+private_config.yaml
+private_config.yaml

@@ -1,3 +1,4 @@
+# Michael
 wandb_args:
   entity: 'tokeron'
   project_name: "TRBLL_maker"
@@ -11,3 +12,4 @@ name:
   train_name: 'train_tmp'
   eval_name: 'eval_tmp'
   model_name: 'gpt2'
+
