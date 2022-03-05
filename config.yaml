@@ -45,3 +45,14 @@ train_args:
 wandb_args:
   entity: 'tokeron' #"mor_ventura"
   project_name: "TRBLL_maker"
+
+eval_pretrained_args:
+  temperature: 0.95
+  max_length: 512
+  num_return_sequences: 2
+
+eval_after_train_args:
+  temperature: 0.95
+  max_length: 512
+  num_return_sequences: 2
+

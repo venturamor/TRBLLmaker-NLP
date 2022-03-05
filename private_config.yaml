@@ -1,0 +1,13 @@
+wandb_args:
+  entity: 'tokeron'
+  project_name: "TRBLL_maker"
+
+path:
+  data_for_finetuning_path: '/home/tok/TRBLLmaker/data/tmp'
+  model_path: '/home/tok/TRBLLmaker/checkpoints2'
+  train_data_path: '/home/tok/TRBLLmaker/data/tmp/train'
+
+name:
+  train_name: 'train_tmp'
+  eval_name: 'eval_tmp'
+  model_name: 'gpt2'

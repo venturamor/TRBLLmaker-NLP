@@ -14,3 +14,7 @@ with open(args.config, encoding="utf8") as f:
 with open('config.yaml') as f:
     global training_args
     training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
+
+with open('private_config.yaml') as f:
+    global private_args
+    private_args = Box(yaml.load(f, Loader=yaml.FullLoader))

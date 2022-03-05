@@ -16,6 +16,7 @@ from box import Box
 import yaml
 import datetime
 from datasets import Dataset
+from config_parser import *
 
 # try to clean memory
 import torch
@@ -34,8 +35,6 @@ def postprocess_text(preds, labels):
 
 
 def generate_prompts(samples, prompt_type):
-    with open('config.yaml') as f:
-        training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
     if prompt_type == "constant":
         data = [training_args.train_args.prompt.text + " " + sentence[0] for sentence in samples["data"]]
     elif prompt_type == "song_metadata":
