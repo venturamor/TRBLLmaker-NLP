@@ -12,17 +12,23 @@ from config_parser import *
 from tqdm import tqdm
 
 
-def generate_prompts(lyrics, meaning, artist="artist", title="song", prompt_type=None):
+def generate_prompts(lyrics, meaning, artist="artist", title="song", prompt_type=None, for_eval=True):
+    if for_eval:
+        meaning = ""
+    else:
+        meaning = " " + meaning
     if prompt_type == "lyrics_meaning":
-        data = "lyrics: {}.\n meaning:".format(lyrics)
+        data = "lyrics: {}.\n meaning:{}".format(lyrics, meaning)
     elif prompt_type == "song_metadata":
         # Load the songs and annotations
-        data = 'Explain the song "{}", written by {}.\n Lyrics: {}.\n Explanation:'.format(title, artist, lyrics)
+        data = 'explain the song "{}", written by {}.\n Lyrics: {}.\n meaning:{}'.format(title, artist, lyrics, meaning)
     elif prompt_type == "question_context":
         data = 'question: what is the meaning of {} in his song "{}"?\n' \
-               'context: {}.\n answer:'.format(artist, title, lyrics)
+               'context: {}.\n answer:{}'.format(artist, title, lyrics, meaning)
     else:  # None: no prompt
         data = lyrics
     # add start token
     data = "<|startoftext|> " + data
+    if not for_eval:
+        data = data + " <|endoftext|>"
     return data

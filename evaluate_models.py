@@ -1,3 +1,5 @@
+import os
+
 from transformers import GPT2LMHeadModel, GPT2Tokenizer,  GPTNeoForCausalLM
 import datasets
 import torch
@@ -25,7 +27,7 @@ def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, tem
             model = GPT2LMHeadModel.from_pretrained(model_name)
     else:
         model = GPTNeoForCausalLM.from_pretrained(model_name)
-    print("Model: {} loaded".format(model_name))
+    # print("Model: {} loaded".format(model_name))
 
     decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
     decode_method = decode_methods[decode_method_index]
@@ -97,38 +99,38 @@ def compare_models(models_names, file_name, TF=False):
     N = 2
     num_return_sequences = 2
 
+    full_df = pd.DataFrame()
+    # create a doc file to write the generated prompts
+    doc = docx.Document()
+    doc.add_heading('Predicted annotations by different models, prompts and temperature', 0)
+
+    # load datasets
+    dataset_name = 'TRBLL_dataset.py'
+    samples_dataset = datasets.load_dataset(dataset_name)['test']
+    print("Loaded {} samples from {}".format(len(samples_dataset), dataset_name))
+
+    # set the seed for reproducibility
+    torch.manual_seed(21)
+    np.random.seed(21)
+
     #  Run for each model
-    for model_name in models_names:
-        # load datasets
-        dataset_name = 'TRBLL_dataset.py'
-        samples_dataset = datasets.load_dataset(dataset_name)['test']
-        print("Loaded {} samples from {}".format(len(samples_dataset), dataset_name))
-
-        torch.manual_seed(21)
-        np.random.seed(21)
-
+    for model_name in tqdm(models_names):
         # choose random N samples from the dataset
         samples = torch.randint(0, len(samples_dataset['data']) - 1, (N,))
 
-        # create a doc file to write the generated prompts
-        doc = docx.Document()
-        doc.add_heading('Predicted annotations by different models, prompts and temperature', 0)
-
-        full_df = pd.DataFrame()
-
         # Run for each sample
-        for index in samples:
+        for index in tqdm(samples):
             lyrics = samples_dataset['data'][index][0]
             meaning = samples_dataset['labels'][index][0]
             artist = samples_dataset['artist'][index][0]
             title = samples_dataset['title'][index][0]
 
             # Run for each prompt type
-            for prompt_type in prompt_types:
+            for prompt_type in tqdm(prompt_types):
                 print("Generating prompts for {}".format(prompt_type))
                 input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type)
                 decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
-                for decode_method_index in range(len(decode_methods)):
+                for decode_method_index in tqdm(range(len(decode_methods))):
                     evaluation_df = run_inference_on_sample(model_name=model_name, input_prompt=input_prompt,
                                                             decode_method_index=decode_method_index)
                     evaluation_df['model'] = model_name
@@ -148,17 +150,21 @@ def compare_models(models_names, file_name, TF=False):
                             docx.enum.text.WD_COLOR_INDEX.YELLOW
                         para.add_run("{} \n\n\n".format(generated.split(input_prompt)[1])).font.highlight_color \
                             = docx.enum.text.WD_COLOR_INDEX.GREEN
-        doc.save('{}_{}.docx'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
-
-        # save df as pickle
-        full_df.to_pickle('{}_{}.pkl'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
-        print("Saved {}_{}.pkl".format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
-        # Save to csv file
-        full_df.to_csv('{}_{}.csv'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
-        print("Saved {}_{}.csv".format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
-        print("Done")
+    doc.save('{}_{}.docx'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    # save df as pickle
+    full_df.to_pickle('{}_{}.pkl'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    print("Saved {}_{}.pkl".format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    # Save to csv file
+    full_df.to_csv('{}_{}.csv'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    print("Saved {}_{}.csv".format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    print("Done")
 
 
 if __name__ == '__main__':
     models_names = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
-    compare_models(models_names, file_name='predictions_before_training')
+    main_path = private_args.path.main_path
+    results_path = private_args.path.results_path
+    pretraining_folder = private_args.path.pretraining_folder
+    file_name = "predictions_before_training"
+    file_path = os.path.join(main_path, results_path, pretraining_folder, file_name)
+    compare_models(models_names, file_name=file_path)

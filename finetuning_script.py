@@ -10,10 +10,11 @@ from transformers import TFGPT2LMHeadModel
 from transformers import GPT2Tokenizer
 from box import Box
 import yaml
-from config_parser import *
 from tqdm import tqdm
 from prompts import *
 from evaluate_models import *
+from config_parser import *
+
 
 def generate_txt_for_training(test_path, train_name, eval_name, prompt_type):
     """
@@ -69,14 +70,14 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         # Run for each prompt type
         prompt_type = training_args.train_args.prompt.prompt_type
         print("Generating prompts for {}".format(prompt_type))
-        input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type)
+        input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type, for_eval=False)
         decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
         for decode_method_index in range(len(decode_methods)):
             evaluation_df = run_inference_on_sample(model_name=model_name, input_prompt=input_prompt,
                                                     decode_method_index=decode_method_index, TF=True)
             evaluation_df['model'] = model_name
             evaluation_df['prompt_type'] = prompt_type
-            full_df = full_df.append(evaluation_df)
+            full_df = full_df.concat(evaluation_df)
             for i, row in evaluation_df.iterrows():
                 generated, input_text = row['predicted_text'], row['input_prompt']
                 # Save to docx file
@@ -138,35 +139,50 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
 if __name__ == '__main__':
     prepare_data = True  # Prepare the data
-    run_model = False  # Run the model
+    run_eval = False  # Run the model
+    main_path = private_args.path.main_path
     # Prepare data if needed
     if prepare_data:
-        data_for_finetuning_path = private_args.path.data_for_finetuning_path
+        data_for_finetuning_path = os.path.join(main_path, private_args.path.data_for_finetuning_path)
         generate_txt_for_training(data_for_finetuning_path, train_name=private_args.name.train_name,
                                   eval_name=private_args.name.eval_name,
                                   prompt_type=training_args.train_args.prompt.prompt_type)
-    # Run model if needed
-    if run_model:
-        model_path = private_args.path.model_path
-        model_name = private_args.path.model_name
+    # Run the model
+    model_type = 'gpt2-medium'
+    model_name_or_path = 'gpt2-medium'
+    train_file = os.path.join(main_path, private_args.path.data_for_finetuning_path, private_args.name.train_name)
+    validation_file = os.path.join(main_path, private_args.path.data_for_finetuning_path, private_args.name.eval_name)
+    output_dir = os.path.join(main_path, private_args.path.output_dir)
+
+    print("Run the following command to see the results:")
+    print("cd {}".format(os.path.join(main_path, 'transformers/examples/pytorch/language-modeling')))
+    print("python run_clm.py --model_type {} --model_name_or_path {} --train_file {} --do_train --validation_file {}"
+          " --do_eval --per_gpu_train_batch_size 2 --save_steps -1 --num_train_epochs 1 --fp16 --output_dir {}"
+          " --overwrite_output_dir".format(model_type, model_name_or_path, train_file, validation_file,
+                                           output_dir))
+    if run_eval:
+        model_path = private_args.name.model_path
+        model_name = private_args.name.model_name
         # Evaluate model on test data - this will take a while
+        results_path = private_args.path.results_path
+        after_training_folder = private_args.path.after_training_folder
         file_name = "predictions_after_training"
+        file_path = os.path.join(main_path, results_path, after_training_folder, file_name)
         number_of_samples = training_args.eval_after_train_args.num_samples
-        evaluate_model_on_test_data(model_name, model_path, file_name, number_of_samples=number_of_samples)
+        evaluate_model_on_test_data(model_name, model_path, file_path, number_of_samples=number_of_samples)
 
-
-
-# Run the script
-# python run_clm.py \
-# --model_type gpt2-medium \
-# --model_name_or_path gpt2-medium \
-# --train_file /home/tok/TRBLLmaker/data/tmp/train_tmp.txt \
-# --do_train \
-# --validation_file /home/tok/TRBLLmaker/data/tmp/eval_tmp.txt \
-# --do_eval \
-# --per_gpu_train_batch_size 2 \
-# --save_steps -1 \
-# --num_train_epochs 1 \
-# --fp16 \
-# --output_dir=/home/tok/TRBLLmaker/checkpoints2 \
-# --overwrite_output_dir
+    # Run model
+    # Run the script
+    # python run_clm.py \
+    # --model_type gpt2-medium \
+    # --model_name_or_path gpt2-medium \
+    # --train_file /home/tok/TRBLLmaker/data/tmp/train_tmp.txt \
+    # --do_train \
+    # --validation_file /home/tok/TRBLLmaker/data/tmp/eval_tmp.txt \
+    # --do_eval \
+    # --per_gpu_train_batch_size 2 \
+    # --save_steps -1 \
+    # --num_train_epochs 1 \
+    # --fp16 \
+    # --output_dir=/home/tok/TRBLLmaker/checkpoints2 \
+    # --overwrite_output_dir
