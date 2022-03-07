@@ -135,3 +135,6 @@ config.yaml
 .idea/TRBLLmaker-NLP.iml
 *.docx
 *.zip
+transformers/
+private_config.yaml
+private_config.yaml
