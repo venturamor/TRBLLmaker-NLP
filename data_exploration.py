@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import docx
-from docx.enum.text import WD_COLOR_INDEX
 from box import Box
 import yaml
 import os
@@ -37,6 +36,8 @@ def explore_data():
 
     # Plot statistics
     # Genre distribution
+    # change songs.genre "artists" to "unknown"
+    songs.loc[songs.genre == 'artists', 'genre'] = 'unknown'
     songs.genre.value_counts().sort_values().plot(kind='barh')
     plt.title('Distribution of songs genres')
     plt.ylabel('Genre')
@@ -45,12 +46,13 @@ def explore_data():
     # Artist distribution
     artist_hist = songs.artist.value_counts().sort_values(ascending=False)
     artist_hist.head(20).plot(kind='barh')
-    plt.title('Distribution of songs artists')
+    plt.title('Distribution of songs artists (most frequent 20)')
     plt.ylabel('Artist')
     plt.xlabel('Number of songs')
+    plt.tight_layout()
     plt.show()
     # Song length histogram
-    plt.hist(lyrics_length, bins=100, range=(0, 10000), density=True,
+    plt.hist(lyrics_length, bins=100, range=(0, 10000),
              color='blue', edgecolor='black', linewidth=1.2)
     plt.title('Distribution of songs length')
     plt.xlabel('Length')
@@ -76,11 +78,12 @@ def explore_data():
     plt.ylabel('Number of examples')
     plt.show()
     # Annotation length distribution
-    plt.hist(annotation_length, bins=100, range=(0, 10000), density=True,
+    plt.hist(annotation_length, bins=100, range=(0, 2000),
              color='blue', edgecolor='black', linewidth=1.2)
     plt.title('Distribution of annotations length')
     plt.xlabel('Length')
     plt.ylabel('Number of annotations')
+    plt.tight_layout()
     plt.show()
     # Boxplot of annotation length
     plt.boxplot(annotation_length)
@@ -157,5 +160,5 @@ def clean_data():
 
 
 if __name__ == '__main__':
-    clean_data()
-    # explore_data()
+    # clean_data()
+    explore_data()
