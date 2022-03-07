@@ -71,26 +71,23 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         prompt_type = training_args.train_args.prompt.prompt_type
         print("Generating prompts for {}".format(prompt_type))
         input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type, for_eval=False)
-        decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
-        for decode_method_index in range(len(decode_methods)):
-            evaluation_df = run_inference_on_sample(model_name=model_name, input_prompt=input_prompt,
-                                                    decode_method_index=decode_method_index, TF=True)
-            evaluation_df['model'] = model_name
-            evaluation_df['prompt_type'] = prompt_type
-            full_df = full_df.concat(evaluation_df)
-            for i, row in evaluation_df.iterrows():
-                generated, input_text = row['predicted_text'], row['input_prompt']
-                # Save to docx file
-                para = doc.add_paragraph("Model: {},\n prompt: {},\n temperature: {} \n\n"
-                                         .format(model_name, prompt_type, temperature))
-                para.add_run("lyrics: {}.\n meaning: {} \n\n".format(lyrics, meaning))
-                # Print the generated prompt highlighted with green color
-                para.add_run("Gerenated text:\n").font.highlight_color \
-                    = docx.enum.text.WD_COLOR_INDEX.RED
-                para.add_run("{} ".format(input_prompt)).font.highlight_color = \
-                    docx.enum.text.WD_COLOR_INDEX.YELLOW
-                para.add_run("{} \n\n\n".format(generated.split(input_prompt)[1])).font.highlight_color \
-                    = docx.enum.text.WD_COLOR_INDEX.GREEN
+        evaluation_df = run_inference_on_sample(model_name=model_name, input_prompt=input_prompt, TF=True)
+        evaluation_df['model'] = model_name
+        evaluation_df['prompt_type'] = prompt_type
+        full_df = full_df.concat(evaluation_df)
+        for i, row in evaluation_df.iterrows():
+            generated, input_text = row['predicted_text'], row['input_prompt']
+            # Save to docx file
+            para = doc.add_paragraph("Model: {},\n prompt: {},\n temperature: {} \n\n"
+                                     .format(model_name, prompt_type, temperature))
+            para.add_run("lyrics: {}.\n meaning: {} \n\n".format(lyrics, meaning))
+            # Print the generated prompt highlighted with green color
+            para.add_run("Gerenated text:\n").font.highlight_color \
+                = docx.enum.text.WD_COLOR_INDEX.RED
+            para.add_run("{} ".format(input_prompt)).font.highlight_color = \
+                docx.enum.text.WD_COLOR_INDEX.YELLOW
+            para.add_run("{} \n\n\n".format(generated.split(input_prompt)[1])).font.highlight_color \
+                = docx.enum.text.WD_COLOR_INDEX.GREEN
 
     doc.save('{}_{}.docx'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
     # save df as pickle
