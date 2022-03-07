@@ -14,6 +14,7 @@ from prompts import *
 import pandas as pd
 import numpy as np
 
+
 def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, temprature=0.9, num_return_sequence=1,
                             TF=False):
     tokenizer = GPT2Tokenizer.from_pretrained(model_name)

@@ -160,11 +160,11 @@ if __name__ == '__main__':
 # python run_clm.py \
 # --model_type gpt2-medium \
 # --model_name_or_path gpt2-medium \
-# --train_file \home\tok\TRBLLmaker\data\tmp\train_tmp.txt \
+# --train_file /home/tok/TRBLLmaker/data/tmp/train_tmp.txt \
 # --do_train \
-# --validation_file \home\tok\TRBLLmaker\data\tmp\eval_tmp.txt \
+# --validation_file /home/tok/TRBLLmaker/data/tmp/eval_tmp.txt \
 # --do_eval \
-# --per_gpu_train_batch_size 4 \
+# --per_gpu_train_batch_size 2 \
 # --save_steps -1 \
 # --num_train_epochs 1 \
 # --fp16 \
