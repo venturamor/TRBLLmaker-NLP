@@ -5,12 +5,13 @@ wandb_args:
 
 path:
   main_path: '/home/student/michael_nlp' # path to main folder /home/tok/TRBLL_maker
-  data_for_finetuning_path: '/data/tmp'
-  model_path: '/checkpoints2'
-  train_data_path: '/data/tmp/train'
+  data_for_finetuning_path: 'data/tmp'
+  model_path: 'checkpoints2'
+  train_data_path: 'data/tmp/train'
   results_path: 'results'
   pretraining_folder: 'pretraining'
   after_training_folder: 'after_training'
+  output_dir: 'results'
 
 name:
   train_name: 'train_tmp'
