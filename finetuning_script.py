@@ -68,23 +68,26 @@ def evaluate_model_on_test_data(model_name_or_path):
 
 
 if __name__ == '__main__':
-  # test_path = '/home/tok/TRBLLmaker/data/tmp'
-  # generate_txt_for_training(test_path)
+  # prepare
+  # data_path = '/home/student/mor_nlp/data/tmp'
+  # generate_txt_for_training(data_path)
+
+  # eval
   model_name_or_path = '/home/tok/TRBLLmaker/checkpoints2'
   evaluate_model_on_test_data(model_name_or_path)
 
 
 
-# Run the script
-#  python run_clm.py \
-#  --model_type gpt2-medium \
-#  --model_name_or_path gpt2-medium \
-#  --train_file "/home/tok/TRBLLmaker/data/tmp/train_tmp.txt" \
+# Run the script - training
+#  python /home/student/mor_nlp/transformers/examples/pytorch/language-modeling/run_clm.py \
+#  --model_type gpt2 \
+#  --model_name_or_path gpt2 \
+#  --train_file "/home/student/mor_nlp/data/tmp/train_tmp.txt" \
 #  --do_train \
-#  --validation_file "/home/tok/TRBLLmaker/data/tmp/eval_tmp.txt" \
+#  --validation_file "/home/student/mor_nlp/data/tmp/eval_tmp.txt" \
 #  --do_eval \
 #  --per_gpu_train_batch_size 4 \
 #  --save_steps -1 \
-#  --num_train_epochs 1 \
+#  --num_train_epochs 4 \
 #  --fp16 \
-#  --output_dir="/home/tok/TRBLLmaker/checkpoints2"
+#  --output_dir="/home/student/mor_nlp/checkpoints3"
