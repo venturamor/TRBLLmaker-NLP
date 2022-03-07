@@ -90,7 +90,8 @@ def compare_models(models_names, file_name, TF=False):
     """
     A function to compare the performance of different models.
     """
-    prompt_types = ['lyrics_meaning', 'song_metadata', 'question_context']
+    prompt_types = ['lyrics_meaning', 'lyrics_meaning_with_metadata', 'song', 'song_with_metadata',
+                    'question_context', 'question_context_with_metadata', None]
 
     # Variables
     max_input_length = 512

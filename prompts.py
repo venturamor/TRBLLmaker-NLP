@@ -18,13 +18,20 @@ def generate_prompts(lyrics, meaning, artist="artist", title="song", prompt_type
     else:
         meaning = " " + meaning
     if prompt_type == "lyrics_meaning":
-        data = "lyrics: {}.\n meaning:{}".format(lyrics, meaning)
-    elif prompt_type == "song_metadata":
+        data = "lyrics: {}.\nmeaning:{}".format(lyrics, meaning)
+    elif prompt_type == "lyrics_meaning_with_metadata":
+        data = "artist: {}.\ntitle: {}.\nlyrics: {}.\nmeaning:{}".format(artist, title, lyrics, meaning)
+    elif prompt_type == "song":
+        data = 'explain the song.\nlyrics: {}.\nmeaning:{}'.format(lyrics, meaning)
+    elif prompt_type == "song_with_metadata":
         # Load the songs and annotations
-        data = 'explain the song "{}", written by {}.\n Lyrics: {}.\n meaning:{}'.format(title, artist, lyrics, meaning)
+        data = 'explain the song "{}", written by {}.\nlyrics: {}.\nmeaning:{}'.format(title, artist, lyrics, meaning)
     elif prompt_type == "question_context":
+        data = 'question: what is the meaning of artist in his song?\n' \
+               'context: {}.\nanswer:{}'.format(artist, title, lyrics, meaning)
+    elif prompt_type == "question_context_with_metadata":
         data = 'question: what is the meaning of {} in his song "{}"?\n' \
-               'context: {}.\n answer:{}'.format(artist, title, lyrics, meaning)
+               'context: {}.\nanswer:{}'.format(artist, title, lyrics, meaning)
     else:  # None: no prompt
         data = lyrics
     # add start token
