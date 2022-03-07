@@ -49,10 +49,11 @@ wandb_args:
 eval_pretrained_args:
   temperature: 0.95
   max_length: 512
-  num_return_sequences: 2
+  num_return_sequences: 1
 
 eval_after_train_args:
   temperature: 0.95
   max_length: 512
-  num_return_sequences: 2
+  num_return_sequences: 1
+  num_samples: 10
 

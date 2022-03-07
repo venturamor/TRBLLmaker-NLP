@@ -12,7 +12,7 @@ from config_parser import *
 from tqdm import tqdm
 from prompts import *
 import pandas as pd
-
+import numpy as np
 
 def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, temprature=0.9, num_return_sequence=1,
                             TF=False):
@@ -30,7 +30,10 @@ def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, tem
     decode_method = decode_methods[decode_method_index]
 
     # encode prompt
-    input_ids = tokenizer(input_prompt, return_tensors="pt").input_ids
+    if TF:
+        input_ids = tokenizer.encode(input_prompt, return_tensors='tf')
+    else:
+        input_ids = tokenizer(input_prompt, return_tensors="pt").input_ids
 
     # predict
     if decode_method == 'greedy':
@@ -75,12 +78,15 @@ def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, tem
         input_list.append(input_prompt)
         generated_text.append(pred)
 
-    df_inference = pd.DataFrame({'original_text': input_list, 'predicted_text': generated_text})
+    df_inference = pd.DataFrame({'input_prompt': input_list, 'predicted_text': generated_text,
+                                 'decode_method': decode_method, 'temprature': temprature})
     return df_inference
 
 
-def compare_models(tf=False):
-    models_names = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
+def compare_models(models_names, file_name, TF=False):
+    """
+    A function to compare the performance of different models.
+    """
     prompt_types = ['lyrics_meaning', 'song_metadata', 'question_context']
 
     # Variables
@@ -89,7 +95,6 @@ def compare_models(tf=False):
     temperature = 0.9
     N = 2
     num_return_sequences = 2
-    torch.manual_seed(21)
 
     #  Run for each model
     for model_name in models_names:
@@ -97,6 +102,9 @@ def compare_models(tf=False):
         dataset_name = 'TRBLL_dataset.py'
         samples_dataset = datasets.load_dataset(dataset_name)['test']
         print("Loaded {} samples from {}".format(len(samples_dataset), dataset_name))
+
+        torch.manual_seed(21)
+        np.random.seed(21)
 
         # choose random N samples from the dataset
         samples = torch.randint(0, len(samples_dataset['data']) - 1, (N,))
@@ -121,30 +129,35 @@ def compare_models(tf=False):
                 decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
                 for decode_method_index in range(len(decode_methods)):
                     evaluation_df = run_inference_on_sample(model_name=model_name, input_prompt=input_prompt,
-                                                            decode_method_index=decode_method_index, TF=tf)
+                                                            decode_method_index=decode_method_index)
                     evaluation_df['model'] = model_name
                     evaluation_df['prompt_type'] = prompt_type
-                    evaluation_df['temperature'] = temperature
-                    evaluation_df['decode_method'] = decode_methods[decode_method_index]
-                    full_df = full_df.append(evaluation_df)
+                    full_df = full_df.append(evaluation_df, ignore_index=True)
 
                     for i, row in evaluation_df.iterrows():
-                        generated, input_text = row['predicted_text'], row['original_text']
+                        generated, input_text = row['predicted_text'], row['input_prompt']
                         # Save to docx file
                         para = doc.add_paragraph("Model: {},\n prompt: {},\n temperature: {} \n\n"
                                                  .format(model_name, prompt_type, temperature))
                         para.add_run("lyrics: {}.\n meaning: {} \n\n".format(lyrics, meaning))
                         # Print the generated prompt highlighted with green color
-                        para.add_run("Gerenated text:\n").font.highlight_color = docx.enum.text.WD_COLOR_INDEX.RED
-                        para.add_run("{} \n\n\n".format(generated)).font.highlight_color = docx.enum.text.WD_COLOR_INDEX.GREEN
-        doc.save    ('predictions_before_training_{}.docx'.format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+                        para.add_run("Gerenated text:\n").font.highlight_color \
+                            = docx.enum.text.WD_COLOR_INDEX.RED
+                        para.add_run("{} ".format(input_prompt)).font.highlight_color = \
+                            docx.enum.text.WD_COLOR_INDEX.YELLOW
+                        para.add_run("{} \n\n\n".format(generated.split(input_prompt)[1])).font.highlight_color \
+                            = docx.enum.text.WD_COLOR_INDEX.GREEN
+        doc.save('{}_{}.docx'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
 
+        # save df as pickle
+        full_df.to_pickle('{}_{}.pkl'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+        print("Saved {}_{}.pkl".format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
         # Save to csv file
-        full_df.to_csv('predictions_before_training_{}.csv'.format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
-        print("Saved predictions to csv file")
-        print("Predictions saved to file")
+        full_df.to_csv('{}_{}.csv'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+        print("Saved {}_{}.csv".format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
         print("Done")
 
 
 if __name__ == '__main__':
-    compare_models()
+    models_names = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
+    compare_models(models_names, file_name='predictions_before_training')
