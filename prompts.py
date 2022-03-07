@@ -12,17 +12,30 @@ from config_parser import *
 from tqdm import tqdm
 
 
-def generate_prompts(lyrics, meaning, artist="artist", title="song", prompt_type=None):
+def generate_prompts(lyrics, meaning, artist="artist", title="song", prompt_type=None, for_eval=True):
+    if for_eval:
+        meaning = ""
+    else:
+        meaning = " " + meaning
     if prompt_type == "lyrics_meaning":
-        data = "lyrics: {}.\n meaning:".format(lyrics)
-    elif prompt_type == "song_metadata":
+        data = "lyrics: {}.\nmeaning:{}".format(lyrics, meaning)
+    elif prompt_type == "lyrics_meaning_with_metadata":
+        data = "artist: {}.\ntitle: {}.\nlyrics: {}.\nmeaning:{}".format(artist, title, lyrics, meaning)
+    elif prompt_type == "song":
+        data = 'explain the song.\nlyrics: {}.\nmeaning:{}'.format(lyrics, meaning)
+    elif prompt_type == "song_with_metadata":
         # Load the songs and annotations
-        data = 'explain the song "{}", written by {}.\n lyrics: {}.\n meaning:'.format(title, artist, lyrics)
+        data = 'explain the song "{}", written by {}.\nlyrics: {}.\nmeaning:{}'.format(title, artist, lyrics, meaning)
     elif prompt_type == "question_context":
+        data = 'question: what is the meaning of artist in his song?\n' \
+               'context: {}.\nanswer:{}'.format(artist, title, lyrics, meaning)
+    elif prompt_type == "question_context_with_metadata":
         data = 'question: what is the meaning of {} in his song "{}"?\n' \
-               'context: {}.\n answer:'.format(artist, title, lyrics)
+               'context: {}.\nanswer:{}'.format(artist, title, lyrics, meaning)
     else:  # None: no prompt
         data = lyrics
     # add start token
     data = "<|startoftext|> " + data
+    if not for_eval:
+        data = data + " <|endoftext|>"
     return data
