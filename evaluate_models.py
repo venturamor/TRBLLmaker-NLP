@@ -135,7 +135,7 @@ def compare_models(models_names, file_name, TF=False):
                                                             decode_method_index=decode_method_index)
                     evaluation_df['model'] = model_name
                     evaluation_df['prompt_type'] = prompt_type
-                    full_df = full_df.append(evaluation_df, ignore_index=True)
+                    full_df = full_df.concat(evaluation_df, ignore_index=True)
 
                     for i, row in evaluation_df.iterrows():
                         generated, input_text = row['predicted_text'], row['input_prompt']
