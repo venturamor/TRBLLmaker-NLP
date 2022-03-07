@@ -17,7 +17,7 @@ def generate_prompts(lyrics, meaning, artist="artist", title="song", prompt_type
         data = "lyrics: {}.\n meaning:".format(lyrics)
     elif prompt_type == "song_metadata":
         # Load the songs and annotations
-        data = 'Explain the song "{}", written by {}.\n Lyrics: {}.\n Explanation:'.format(title, artist, lyrics)
+        data = 'explain the song "{}", written by {}.\n lyrics: {}.\n meaning:'.format(title, artist, lyrics)
     elif prompt_type == "question_context":
         data = 'question: what is the meaning of {} in his song "{}"?\n' \
                'context: {}.\n answer:'.format(artist, title, lyrics)

@@ -1,12 +1,12 @@
-# Michael
+# Mor
 wandb_args:
-  entity: 'tokeron'
+  entity: 'morventura'
   project_name: "TRBLL_maker"
 
 path:
-  data_for_finetuning_path: '/home/tok/TRBLLmaker/data/tmp'
-  model_path: '/home/tok/TRBLLmaker/checkpoints2'
-  train_data_path: '/home/tok/TRBLLmaker/data/tmp/train'
+  data_for_finetuning_path: '/home/student/mor_nlp/data/tmp'
+  model_path: '/home/student/mor_nlp/checkpoints3'
+  train_data_path: '/home/student/mor_nlp/data/tmp/train'
 
 name:
   train_name: 'train_tmp'

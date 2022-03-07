@@ -43,7 +43,7 @@ train_args:
   results_checkpoints_dir: results_checkpoints
 
 wandb_args:
-  entity: 'tokeron' #"mor_ventura"
+  entity: "mor_ventura"
   project_name: "TRBLL_maker"
 
 eval_pretrained_args:

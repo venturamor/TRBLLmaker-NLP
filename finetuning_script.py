@@ -15,6 +15,7 @@ from tqdm import tqdm
 from prompts import *
 from evaluate_models import *
 
+
 def generate_txt_for_training(test_path, train_name, eval_name, prompt_type):
     """
     This function will generate the txt file for training
@@ -137,8 +138,8 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
 
 if __name__ == '__main__':
-    prepare_data = True  # Prepare the data
-    run_model = False  # Run the model
+    prepare_data = False  # Prepare the data
+    run_eval = True  # Run the model
     # Prepare data if needed
     if prepare_data:
         data_for_finetuning_path = private_args.path.data_for_finetuning_path
@@ -146,13 +147,15 @@ if __name__ == '__main__':
                                   eval_name=private_args.name.eval_name,
                                   prompt_type=training_args.train_args.prompt.prompt_type)
     # Run model if needed
-    if run_model:
+    if run_eval:
         model_path = private_args.path.model_path
-        model_name = private_args.path.model_name
+        model_name = private_args.name.model_name
         # Evaluate model on test data - this will take a while
         file_name = "predictions_after_training"
         number_of_samples = training_args.eval_after_train_args.num_samples
         evaluate_model_on_test_data(model_name, model_path, file_name, number_of_samples=number_of_samples)
+
+    print('done')
 
 
 
@@ -164,8 +167,9 @@ if __name__ == '__main__':
 #  --do_train \
 #  --validation_file "/home/student/mor_nlp/data/tmp/eval_tmp.txt" \
 #  --do_eval \
-#  --per_gpu_train_batch_size 4 \
+#  --per_gpu_train_batch_size 1 \
 #  --save_steps -1 \
 #  --num_train_epochs 4 \
 #  --fp16 \
-#  --output_dir="/home/student/mor_nlp/checkpoints3"
+#  --output_dir="/home/student/mor_nlp/checkpoints3" \
+#  --overwrite_output_dir
