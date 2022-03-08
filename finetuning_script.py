@@ -61,7 +61,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
     full_df = pd.DataFrame()
 
     # Run for each sample
-    for index in samples:
+    for index in tqdm(samples):
         lyrics = samples_dataset['data'][index][0]
         meaning = samples_dataset['labels'][index][0]
         artist = samples_dataset['artist'][index][0]
@@ -74,7 +74,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         evaluation_df = run_inference_on_sample(model_name=model_name, input_prompt=input_prompt, TF=True)
         evaluation_df['model'] = model_name
         evaluation_df['prompt_type'] = prompt_type
-        full_df = full_df.concat(evaluation_df)
+        full_df = full_df.append(evaluation_df)
         for i, row in evaluation_df.iterrows():
             generated, input_text = row['predicted_text'], row['input_prompt']
             # Save to docx file
@@ -86,8 +86,9 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
                 = docx.enum.text.WD_COLOR_INDEX.RED
             para.add_run("{} ".format(input_prompt)).font.highlight_color = \
                 docx.enum.text.WD_COLOR_INDEX.YELLOW
-            para.add_run("{} \n\n\n".format(generated.split(input_prompt)[1])).font.highlight_color \
-                = docx.enum.text.WD_COLOR_INDEX.GREEN
+            para.add_run("{} \n\n\n".format("EMPTY" if len(generated.split(input_prompt)) <=
+                                                  1 else generated.split(input_prompt)[1])).font.highlight_color = \
+                docx.enum.text.WD_COLOR_INDEX.GREEN
 
     doc.save('{}_{}.docx'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
     # save df as pickle
@@ -135,30 +136,35 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
 
 if __name__ == '__main__':
-    prepare_data = True  # Prepare the data
-    run_eval = False  # Run the model
+    states = ["prepare_data", "train", "eval"]
+    state = 2
+    curr_state = states[state]
     main_path = private_args.path.main_path
-    # Prepare data if needed
-    if prepare_data:
+    # Prepare the data
+    if curr_state == "prepare_data":
         data_for_finetuning_path = os.path.join(main_path, private_args.path.data_for_finetuning_path)
         generate_txt_for_training(data_for_finetuning_path, train_name=private_args.name.train_name,
                                   eval_name=private_args.name.eval_name,
                                   prompt_type=training_args.train_args.prompt.prompt_type)
-    # Run the model
-    model_type = 'gpt2-medium'
-    model_name_or_path = 'gpt2-medium'
-    train_file = os.path.join(main_path, private_args.path.data_for_finetuning_path, private_args.name.train_name)
-    validation_file = os.path.join(main_path, private_args.path.data_for_finetuning_path, private_args.name.eval_name)
-    output_dir = os.path.join(main_path, private_args.path.output_dir)
+    elif curr_state == "train":
+        # Run the mode
+        model_type = 'gpt2-medium'
+        model_name_or_path = 'gpt2-medium'
+        model_path = private_args.path.model_path
+        train_file = os.path.join(main_path, private_args.path.data_for_finetuning_path, private_args.name.train_name)
+        validation_file = os.path.join(main_path, private_args.path.data_for_finetuning_path, private_args.name.eval_name)
+        output_dir = os.path.join(main_path, private_args.path.output_dir, model_path)
+        batch_size = training_args.train_args.batch_size
+        num_train_epochs = training_args.train_args.num_train_epochs
 
-    print("Run the following command to see the results:")
-    print("cd {}".format(os.path.join(main_path, 'transformers/examples/pytorch/language-modeling')))
-    print("python run_clm.py --model_type {} --model_name_or_path {} --train_file {} --do_train --validation_file {}"
-          " --do_eval --per_gpu_train_batch_size 2 --save_steps -1 --num_train_epochs 1 --fp16 --output_dir {}"
-          " --overwrite_output_dir".format(model_type, model_name_or_path, train_file, validation_file,
-                                           output_dir))
-    if run_eval:
-        model_path = private_args.name.model_path
+        print("Run the following command to see the results:")
+        print("cd {}".format(os.path.join(main_path, 'transformers/examples/pytorch/language-modeling')))
+        print("python run_clm.py --model_type {} --model_name_or_path {} --train_file {} --do_train --validation_file {}"
+              " --do_eval --per_gpu_train_batch_size {} --save_steps -1 --num_train_epochs {} --fp16 --output_dir {}"
+              " --overwrite_output_dir".format(model_type, model_name_or_path, train_file + '.txt',
+                                           validation_file + '.txt', batch_size, num_train_epochs, output_dir))
+    if curr_state == "eval":
+        model_path = private_args.path.model_path
         model_name = private_args.name.model_name
         # Evaluate model on test data - this will take a while
         results_path = private_args.path.results_path
@@ -179,7 +185,7 @@ if __name__ == '__main__':
     # --do_eval \
     # --per_gpu_train_batch_size 2 \
     # --save_steps -1 \
-    # --num_train_epochs 1 \
+    # --num_train_epochs 4 \
     # --fp16 \
     # --output_dir=/home/tok/TRBLLmaker/checkpoints2 \
     # --overwrite_output_dir
