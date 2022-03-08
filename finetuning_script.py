@@ -159,9 +159,9 @@ if __name__ == '__main__':
 
         print("Run the following command to see the results:")
         print("cd {}".format(os.path.join(main_path, 'transformers/examples/pytorch/language-modeling')))
-        print("python run_clm.py --model_type {} --model_name_or_path {} --train_file {} --do_train --validation_file {}"
+        print("nohup python run_clm.py --model_type {} --model_name_or_path {} --train_file {} --do_train --validation_file {}"
               " --do_eval --per_gpu_train_batch_size {} --save_steps -1 --num_train_epochs {} --fp16 --output_dir {}"
-              " --overwrite_output_dir".format(model_type, model_name_or_path, train_file + '.txt',
+              " --overwrite_output_dir & tail -f nohup.out".format(model_type, model_name_or_path, train_file + '.txt',
                                            validation_file + '.txt', batch_size, num_train_epochs, output_dir))
     if curr_state == "eval":
         model_path = private_args.path.model_path
