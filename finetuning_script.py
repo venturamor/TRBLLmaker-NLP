@@ -15,6 +15,47 @@ from prompts import *
 from evaluate_models import *
 from config_parser import *
 
+def decode_fn(model, tokenizer, input_prompt, decode_method, TF, temperature, num_return_sequences):
+    # additional parameters for better decoding - repetition_penalty, min_length
+    # encode prompt
+    if TF:
+        input_ids = tokenizer.encode(input_prompt, return_tensors='tf')
+    else:
+        input_ids = tokenizer(input_prompt, return_tensors="pt").input_
+    # predict
+    if decode_method == 'greedy':
+        # greedy
+        outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
+                                 temperature=temperature, num_return_sequences=1,
+                                 )
+    elif decode_method == 'beam search':
+        # beam search with penalty on repeat
+        outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
+                                 num_beams=3, early_stopping=True,
+                                 num_return_sequences=num_return_sequences,
+                                 no_repeat_ngram_size=2
+                                 )
+    elif decode_method == 'sampling':
+        # sampling
+        outputs = model.generate(input_ids, do_sample=True, top_k=0,
+                                 max_length=training_args.eval_pretrained_args.max_length,
+                                 num_return_sequences=num_return_sequences,
+                                 temperature=temperature
+                                 )
+    elif decode_method == 'top-k sampling':
+        # top-k sampling
+        outputs = model.generate(input_ids, do_sample=True, top_k=50,
+                                 max_length=training_args.eval_pretrained_args.max_length,
+                                 num_return_sequences=num_return_sequences,
+                                 )
+    else:  # decode_method == 'top-p sampling' (default)
+        # top-p sampling
+        outputs = model.generate(input_ids, do_sample=True, top_k=0, top_p=0.92,
+                                 max_length=training_args.eval_pretrained_args.max_length,
+                                 num_return_sequences=num_return_sequences,
+                                 )
+    return outputs
+
 
 def generate_txt_for_training(test_path, train_name, eval_name, prompt_type):
     """
@@ -23,35 +64,39 @@ def generate_txt_for_training(test_path, train_name, eval_name, prompt_type):
     :return:
     """
     dataset_name = 'TRBLL_dataset.py'
-    samples_dataset = datasets.load_dataset(dataset_name)['train']
+    samples_dataset_train = datasets.load_dataset(dataset_name)['train']
+    samples_dataset_validation = datasets.load_dataset(dataset_name)['validation']
 
-    dataset = [generate_prompts(lyrics=row['data'], meaning=row['labels'], artist=row['artist'], title=row['title'],
-                                prompt_type=prompt_type) for row in samples_dataset]
+    train_dataset = [generate_prompts(lyrics=row['data'], meaning=row['labels'], artist=row['artist'], title=row['title'],
+                                prompt_type=prompt_type) for row in samples_dataset_train]
 
-    train, eval = train_test_split(dataset, train_size=.9, random_state=21)
+    validation_dataset = [generate_prompts(lyrics=row['data'], meaning=row['labels'], artist=row['artist'],
+                                           title=row['title'], prompt_type=prompt_type)
+                          for row in samples_dataset_validation]
 
     with open(os.path.join(test_path, train_name + '.txt'), 'w+') as file_handle:
-        file_handle.write("<|endoftext|>".join(train))
+        file_handle.write("<|endoftext|>".join(train_dataset))
 
     with open(os.path.join(test_path, eval_name + '.txt'), 'w+') as file_handle:
-        file_handle.write("<|endoftext|>".join(eval))
+        file_handle.write("<|endoftext|>".join(validation_dataset))
+
+    print("Generated txt files for training")
 
 
 # Using the model
-def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_samples=10):
+def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_samples=10, after_training=False):
     """
     Evaluate model on test samples
     """
-    TF = True  # Currently using TensorFlow for evaluation of the model (not PyTorch)
-    # Load the model
-    tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-    if model_name == 'gpt2' or model_name =='gpt2-medium':
-        if TF:
-            model = TFGPT2LMHeadModel.from_pretrained(model_name)
-        else:
-            model = GPT2LMHeadModel.from_pretrained(model_name)
+
+    if after_training:
+        TF = True  # Currently using TensorFlow for evaluation of the model (not PyTorch)
+        model_names = [model_name]
+        model_paths = [model_path]
     else:
-        model = GPTNeoForCausalLM.from_pretrained(model_name)
+        TF = False
+        model_names = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
+        model_paths = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
 
     # Load the test data
     dataset_name = training_args.train_args.dataset_name
@@ -68,105 +113,91 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
     # create a doc file to write the generated prompts
     doc = docx.Document()
-    doc.add_heading('Predicted annotations by different models, prompts and temperature', 0)
+    headline = "after training" if after_training else "before training"
+    doc.add_heading('Predicted annotation {}'.format(headline), 0)
 
     # Dataframe to store the results
     full_df = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temperature',
                                     'model', 'prompt_type'])
 
-    # Run for each sample
-    for index in tqdm(samples):
-        print("Run for each sample...")
-        lyrics = samples_dataset['data'][index][0]
-        meaning = samples_dataset['labels'][index][0]
-        artist = samples_dataset['artist'][index][0]
-        title = samples_dataset['title'][index][0]
-
-        # Run for each prompt type
-        prompt_type = training_args.train_args.prompt.prompt_type
-        print("Generating prompts for {}".format(prompt_type))
-        input_prompt = generate_prompts(lyrics=lyrics, meaning=meaning, artist=artist, title=title,
-                                        prompt_type=prompt_type, for_eval=False)
+    # Loop over the models
+    for model_name, model_path in tqdm(zip(model_names, model_paths)):
+        print("Run for each model.\nCurrent model: {}".format(model_name))
+        #  Load tokenizer
+        tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        # Load the model
+        if model_name == 'gpt2' or model_name =='gpt2-medium':
+            if TF:
+                model = TFGPT2LMHeadModel.from_pretrained(model_path)
+            else:
+                model = GPT2LMHeadModel.from_pretrained(model_path)
+        else:
+            model = GPTNeoForCausalLM.from_pretrained(model_path)
 
         df_inference = pd.DataFrame(columns=['example_index', 'input_prompt', 'predicted_text', 'decode_method',
-                                             'temperature', 'model', 'prompt_type'])
+                                             'temperature', 'model', 'prompt_type', 'meaning'])
 
-        decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
-        for decode_method in decode_methods:
-            # encode prompt
-            if TF:
-                input_ids = tokenizer.encode(input_prompt, return_tensors='tf')
-            else:
-                input_ids = tokenizer(input_prompt, return_tensors="pt").input_ids
+        # Run for each sample
+        for index in tqdm(samples):
+            print("Run for each sample...")
+            lyrics = samples_dataset['data'][index][0]
+            meaning = samples_dataset['labels'][index][0]
+            artist = samples_dataset['artist'][index][0]
+            title = samples_dataset['title'][index][0]
 
-            # predict
-            if decode_method == 'greedy':
-                # greedy
-                outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
-                                         temperature=temperature,num_return_sequences=1,
-                                         )
-            elif decode_method == 'beam search':
-                # beam search with penalty on repeat
-                outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
-                                         num_beams=3, early_stopping=True,
-                                         num_return_sequences=num_return_sequences,
-                                         no_repeat_ngram_size=2
-                                         )
-            elif decode_method == 'sampling':
-                # sampling
-                outputs = model.generate(input_ids, do_sample=True, top_k=0,
-                                         max_length=training_args.eval_pretrained_args.max_length,
-                                         num_return_sequences=num_return_sequences,
-                                         temperature=temperature
-                                         )
-            elif decode_method == 'top-k sampling':
-                # top-k sampling
-                outputs = model.generate(input_ids, do_sample=True, top_k=50,
-                                         max_length=training_args.eval_pretrained_args.max_length,
-                                         num_return_sequences=num_return_sequences,
-                                         )
-            else:  # decode_method == 'top-p sampling' (default)
-                # top-p sampling
-                outputs = model.generate(input_ids, do_sample=True, top_k=0, top_p=0.92,
-                                         max_length=training_args.eval_pretrained_args.max_length,
-                                         num_return_sequences=num_return_sequences,
-                                         )
-            # additional parameters for better decoding - repetition_penalty, min_length
-            # decode
-            pred_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+            # Run for each prompt type
+            prompt_type = training_args.train_args.prompt.prompt_type
+            print("Generating prompts for {}".format(prompt_type))
+            input_prompt = generate_prompts(lyrics=lyrics, meaning=meaning, artist=artist, title=title,
+                                            prompt_type=prompt_type, for_eval=True)
 
-            input_list, generated_text = [], []
+            decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
+            for decode_method in decode_methods:
+                outputs = decode_fn(model=model, tokenizer=tokenizer, input_prompt=input_prompt, decode_method=decode_method,
+                          TF=TF, temperature=temperature, num_return_sequences=num_return_sequences)
 
-            for pred in pred_text:
-                input_list.append(input_prompt)
-                pred_splitted = pred.split(input_prompt)
-                if len(pred_splitted) <= 1:
-                    pred = "Empty"
-                elif len(pred_splitted) == 2:
-                    pred = pred.split(input_prompt)[1]
-                else:
-                    pred = "More than one repetition: " + pred
-                generated_text.append(pred)
+                # decode
+                pred_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
-            df_curr = pd.DataFrame({'example_index': index, 'input_prompt': input_list, 'predicted_text': generated_text,
-                                    'decode_method': decode_method, 'temperature': temperature})
-            df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
+                input_list, generated_text_list, index_list = [], [], []
+                decode_method_list, temperature_list = [], []
 
-        full_df = pd.concat([full_df, df_inference], ignore_index=True)
-        for i, row in full_df.iterrows():
-            generated, input_text = row['predicted_text'], row['input_prompt']
-            # Save to docx file
-            para = doc.add_paragraph("Model: {},\n prompt: {},\n temperature: {} \n\n"
-                                     .format(model_name, prompt_type, temperature))
-            para.add_run("lyrics: {}.\n meaning: {} \n\n".format(lyrics, meaning))
-            # Print the generated prompt highlighted with green color
-            para.add_run("Gerenated text:\n").font.highlight_color \
-                = docx.enum.text.WD_COLOR_INDEX.RED
-            para.add_run("{} ".format(input_prompt)).font.highlight_color = \
-                docx.enum.text.WD_COLOR_INDEX.YELLOW
-            para.add_run("{} \n\n\n".format("EMPTY" if len(generated.split(input_prompt)) <=
-                                                  1 else generated.split(input_prompt)[1])).font.highlight_color = \
-                docx.enum.text.WD_COLOR_INDEX.GREEN
+                for pred in pred_text:
+                    input_list.append(input_prompt)
+                    index_list.append(index.tolist())
+                    decode_method_list.append(decode_method)
+                    temperature_list.append(temperature)
+                    pred_splitted = pred.split(input_prompt)
+                    if len(pred_splitted) <= 1:
+                        pred = "Empty"
+                    elif len(pred_splitted) == 2:
+                        pred = pred.split(input_prompt)[1]
+                    else:
+                        pred = "More than one repetition: " + pred
+                    generated_text_list.append(pred)
+                df_curr = pd.DataFrame({'example_index': index_list, 'input_prompt': input_list,
+                                        'predicted_text': generated_text_list, 'decode_method': decode_method_list,
+                                        'temperature': temperature_list, 'model': model_name, 'prompt_type': prompt_type,
+                                        'meaning': meaning})
+                df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
+
+    # save inference results
+    for i, row in df_inference.iterrows():
+        generated, input_text = row['predicted_text'], row['input_prompt']
+        model_name, prompt_type, temperature = row['model'], row['prompt_type'], row['temperature']
+        meaning = row['meaning']
+
+        generated = "EMPTY" if len(generated.split(input_text)) <= 1 else generated.split(input_text)[1]
+        # Save to docx file
+        para = doc.add_paragraph("Model: {},\n prompt: {},\n temperature: {} \n\n"
+                                 .format(model_name, prompt_type, temperature))
+        para.add_run("lyrics: {}.\n meaning: {} \n\n".format(input_text, meaning))
+        # Print the generated prompt highlighted with green color
+        para.add_run("Gerenated text:\n").font.highlight_color \
+            = docx.enum.text.WD_COLOR_INDEX.RED
+        para.add_run("{} \n\n\n".format(generated)).font.highlight_color \
+            = docx.enum.text.WD_COLOR_INDEX.GREEN
+
 
     doc.save('{}_{}.docx'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
     # save df as pickle
@@ -179,8 +210,8 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
 
 if __name__ == '__main__':
-    states = ["prepare_data", "train", "eval"]
-    state = 2
+    states = ["prepare_data", "train", "eval", "eval_pretrained"]
+    state = 0
     curr_state = states[state]
     main_path = private_args.path.main_path
     # Prepare the data
@@ -205,7 +236,7 @@ if __name__ == '__main__':
         print("nohup python {} --model_type {} --model_name_or_path {} --train_file {} --do_train --validation_file {}"
               " --do_eval --per_gpu_train_batch_size {} --save_steps -1 --num_train_epochs {} --fp16 --output_dir {}"
               " --overwrite_output_dir & tail -f nohup.out".format(training_script, model_type, model_name_or_path, train_file + '.txt',
-                                           validation_file + '.txt', batch_size, num_train_epochs, output_dir))
+                validation_file + '.txt', batch_size, num_train_epochs, output_dir))
     if curr_state == "eval":
         model_path = private_args.path.model_path
         model_name = private_args.name.model_name
@@ -215,55 +246,15 @@ if __name__ == '__main__':
         file_name = "predictions_after_training"
         file_path = os.path.join(main_path, results_path, after_training_folder, file_name)
         number_of_samples = training_args.eval_after_train_args.num_samples
-        evaluate_model_on_test_data(model_name, model_path, file_path, number_of_samples=number_of_samples)
+        evaluate_model_on_test_data(model_name, model_path, file_path, number_of_samples=number_of_samples,
+                                    after_training=True)
 
-    # Run model
-    # Run the script
-    # python run_clm.py \
-    # --model_type gpt2-medium \
-    # --model_name_or_path gpt2-medium \
-    # --train_file /home/tok/TRBLLmaker/data/tmp/train_tmp.txt \
-    # --do_train \
-    # --validation_file /home/tok/TRBLLmaker/data/tmp/eval_tmp.txt \
-    # --do_eval \
-    # --per_gpu_train_batch_size 2 \
-    # --save_steps -1 \
-    # --num_train_epochs 4 \
-    # --fp16 \
-    # --output_dir=/home/tok/TRBLLmaker/checkpoints2 \
-    # --overwrite_output_dir
-
-    # # Load the data
-    # dataset_name = training_args.train_args.dataset_name
-    # samples_dataset = datasets.load_dataset(dataset_name)['test']
-    # # Load the model
-    # model = TFGPT2LMHeadModel.from_pretrained(model_path, from_pt=True)
-    # tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-    #
-    # # set a seed for reproducibility
-    # np.random.seed(21)
-    #
-    # # Evaluate the model on the test data
-    # random_int = np.random.randint(0, len(samples_dataset))
-    # input_prompt = generate_prompts(lyrics=samples_dataset[random_int]['data'][0],
-    #                                 meaning=samples_dataset[random_int]['labels'][0],
-    #                                 artist=samples_dataset[random_int]['artist'][0],
-    #                                 title=samples_dataset[random_int]['title'][0],
-    #                                 prompt_type=training_args.train_args.prompt.prompt_type)
-    # input_ids = tokenizer.encode(input_prompt, return_tensors='tf')
-    # generated_text_samples = model.generate(
-    #     input_ids,
-    #     max_length=training_args.eval_after_train_args.max_length,
-    #     num_return_sequences=training_args.eval_after_train_args.num_return_sequences,
-    #     no_repeat_ngram_size=2,
-    #     repetition_penalty=1.5,
-    #     top_p=0.92,
-    #     temperature=.85,
-    #     do_sample=True,
-    #     top_k=125,
-    #     early_stopping=True
-    # )
-    # #Print output for each sequence generated above
-    # for i, beam in enumerate(generated_text_samples):
-    #     print("{}: {}".format(i, tokenizer.decode(beam, skip_special_tokens=True)))
-    #     print()
+    elif curr_state == "eval_pretrained":
+        number_of_samples = training_args.eval_pretrained_args.num_samples
+        main_path = private_args.path.main_path
+        results_path = private_args.path.results_path
+        pretraining_folder = private_args.path.pretraining_folder
+        file_name = "predictions_before_training"
+        file_path = os.path.join(main_path, results_path, pretraining_folder, file_name)
+        evaluate_model_on_test_data("", "", file_path, number_of_samples=number_of_samples,
+                                    after_training=False)
