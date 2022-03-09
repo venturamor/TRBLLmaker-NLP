@@ -70,9 +70,14 @@ def generate_txt_for_training(test_path, train_name, eval_name, prompt_type):
     train_dataset = [generate_prompts(lyrics=row['data'], meaning=row['labels'], artist=row['artist'], title=row['title'],
                                 prompt_type=prompt_type) for row in samples_dataset_train]
 
-    validation_dataset = [generate_prompts(lyrics=row['data'], meaning=row['labels'], artist=row['artist'],
-                                           title=row['title'], prompt_type=prompt_type)
-                          for row in samples_dataset_validation]
+    # validation_dataset = [generate_prompts(lyrics=row['data'], meaning=row['labels'], artist=row['artist'],
+    #                                        title=row['title'], prompt_type=prompt_type)
+    #                       for row in samples_dataset_validation]
+
+    # split the dataset into train and validation
+    train_dataset, validation_dataset = train_test_split(train_dataset, test_size=0.2, random_state=42)
+
+
 
     with open(os.path.join(test_path, train_name + '.txt'), 'w+') as file_handle:
         file_handle.write("<|endoftext|>".join(train_dataset))
