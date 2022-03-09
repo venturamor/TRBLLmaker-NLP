@@ -15,8 +15,11 @@ import pandas as pd
 import numpy as np
 
 # Load pickl as a dataframe
-pickle_name = 'filename.pkl'
-gen_df = pd.read_pickle(pickle_name)
-
+path = '/home/tok/TRBLLmaker/results/pretraining/'
+pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
+df = pd.read_pickle(path + pickle_name)
+for row in df.itertuples():
+    if row.prompt_id == '0':
+        print(row.prompt_id, row.prediction)
 # Compare between different models and parameters
 

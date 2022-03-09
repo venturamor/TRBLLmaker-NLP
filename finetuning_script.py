@@ -85,7 +85,8 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         # Run for each prompt type
         prompt_type = training_args.train_args.prompt.prompt_type
         print("Generating prompts for {}".format(prompt_type))
-        input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type, for_eval=False)
+        input_prompt = generate_prompts(lyrics=lyrics, meaning=meaning, artist=artist, title=title,
+                                        prompt_type=prompt_type, for_eval=False)
 
         df_inference = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temperature',
                                     'model', 'prompt_type'])

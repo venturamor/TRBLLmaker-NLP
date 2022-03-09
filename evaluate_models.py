@@ -143,7 +143,8 @@ def compare_models(models_names, file_name, TF=False):
             # Run for each prompt type
             for prompt_type in tqdm(prompt_types):
                 print("Run for each prompt type.\nCurrent prompt type:{}".format(prompt_type))
-                input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type)
+                input_prompt = generate_prompts(lyrics=lyrics, meaning=meaning, artist=artist, title=title,
+                                                prompt_type=prompt_type)
 
                 temperature = 0.9
                 num_return_sequence = 1,
