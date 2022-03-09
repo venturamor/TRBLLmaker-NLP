@@ -144,7 +144,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
                                     'decode_method': decode_method, 'temperature': temperature})
             df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
 
-        full_df = pd.append(full_df, df_inference, ignore_index=True)
+        full_df = pd.concat([full_df, df_inference], ignore_index=True)
         for i, row in full_df.iterrows():
             generated, input_text = row['predicted_text'], row['input_prompt']
             # Save to docx file
