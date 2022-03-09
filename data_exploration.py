@@ -24,15 +24,15 @@ def explore_data():
     lyrics_length = []
     for songTuple in songs.itertuples():
         lyrics = songTuple.lyrics
-        lyrics_length.append(len(lyrics))
+        lyrics_length.append(len(lyrics.split()))
 
-    text_length = []
+    lyrics_length = []
     annotation_length = []
     for sampleTuple in samples.itertuples():
-        text = sampleTuple.text
+        lyrics = sampleTuple.text
         annotation = sampleTuple.annotation
-        text_length.append(len(text))
-        annotation_length.append(len(annotation))
+        lyrics_length.append(len(lyrics.split()))
+        annotation_length.append(len(annotation.split()))
 
     # Plot statistics
     # Genre distribution
@@ -54,25 +54,25 @@ def explore_data():
     # Song length histogram
     plt.hist(lyrics_length, bins=100, range=(0, 10000),
              color='blue', edgecolor='black', linewidth=1.2)
-    plt.title('Distribution of songs length')
+    plt.title('Distribution of song samples length')
     plt.xlabel('Length')
     plt.ylabel('Number of songs')
     plt.show()
     # Boxplot songs length
     plt.boxplot(lyrics_length)
-    plt.title('Boxplot of songs length')
+    plt.title('Boxplot of song samples length')
     plt.xlabel('Length')
-    plt.ylabel('Number of songs')
+    plt.ylabel('Number of song samples')
     plt.show()
     # Text length distribution (text of the annotation)
-    plt.hist(text_length, bins=100, range=(0, 10000), density=True,
+    plt.hist(lyrics_length, bins=100, range=(0, 10000), density=True,
              color='blue', edgecolor='black', linewidth=1.2)
     plt.title('Distribution of examples length')
     plt.xlabel('Length')
     plt.ylabel('Number of examples')
     plt.show()
     # Plot Boxplot of songs text length
-    plt.boxplot(text_length)
+    plt.boxplot(lyrics_length)
     plt.title('Boxplot of examples length')
     plt.xlabel('Length')
     plt.ylabel('Number of examples')
@@ -100,11 +100,11 @@ def explore_data():
     doc.add_heading('Annotations', 0)
     for sample_id in random_samples:
         sample_tuple = samples.loc[sample_id]
-        text = sample_tuple.text
+        lyrics = sample_tuple.text
         annotation = sample_tuple.annotation
         song_id = sample_tuple.song_id
         para = doc.add_paragraph('Example: ' + str(sample_id) + '\n')
-        para.add_run('Text: ' + text + '\n').bold = True
+        para.add_run('Text: ' + lyrics + '\n').bold = True
         para.add_run('Annotation: ' + annotation + '\n').font.highlight_color = docx.enum.text.WD_COLOR_INDEX.BRIGHT_GREEN
         song = songs[songs.song_id == song_id].iloc[0]
         para.add_run('Artist: ' + song.artist + '\n').bold = True

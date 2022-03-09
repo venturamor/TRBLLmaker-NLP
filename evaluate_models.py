@@ -17,7 +17,7 @@ import pandas as pd
 import numpy as np
 
 
-def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, temprature=0.9, num_return_sequence=1,
+def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, temperature=0.9, num_return_sequence=1,
                             TF=False):
     tokenizer = GPT2Tokenizer.from_pretrained(model_name)
     if model_name == 'gpt2' or model_name =='gpt2-medium':
@@ -29,7 +29,7 @@ def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, tem
         model = GPTNeoForCausalLM.from_pretrained(model_name)
     # print("Model: {} loaded".format(model_name))
 
-    df_inference = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temprature'])
+    df_inference = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temperature'])
 
     decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
     for decode_method in decode_methods:
@@ -43,7 +43,7 @@ def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, tem
         if decode_method == 'greedy':
             # greedy
             outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
-                                     temprature=temprature, num_return_sequence=num_return_sequence,
+                                     temperature=temperature, num_return_sequence=num_return_sequence,
                                      num_return_sequences=1,
                                      )
         elif decode_method == 'beam search':
@@ -58,7 +58,7 @@ def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, tem
             outputs = model.generate(input_ids, do_sample=True, top_k=0,
                                      max_length=training_args.eval_pretrained_args.max_length,
                                      num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
-                                     temprature=temprature
+                                     temperature=temperature
                                      )
         elif decode_method == 'top-k sampling':
             # top-k sampling
@@ -83,8 +83,8 @@ def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, tem
             generated_text.append(pred)
 
         df_curr = pd.DataFrame({'input_prompt': input_list, 'predicted_text': generated_text,
-                                 'decode_method': decode_method, 'temprature': temprature})
-        df_inference.concat(df_curr)
+                                 'decode_method': decode_method, 'temperature': temperature})
+        df_inference = pd.concat([df_inference, df_curr])
     return df_inference
 
 
@@ -101,8 +101,8 @@ def compare_models(models_names, file_name, TF=False):
     temperature = 0.9
     N = 2
     num_return_sequences = 2
-
-    full_df = pd.DataFrame()
+    full_df = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temperature',
+                                    'model', 'prompt_type'])
     # create a doc file to write the generated prompts
     doc = docx.Document()
     doc.add_heading('Predicted annotations by different models, prompts and temperature', 0)
@@ -118,11 +118,23 @@ def compare_models(models_names, file_name, TF=False):
 
     #  Run for each model
     for model_name in tqdm(models_names):
+        print("Run for each model.\nCurrent model: {}".format(model_name))
+        # load the model
+        tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        if model_name == 'gpt2' or model_name == 'gpt2-medium':
+            if TF:
+                model = TFGPT2LMHeadModel.from_pretrained(model_name)
+            else:
+                model = GPT2LMHeadModel.from_pretrained(model_name)
+        else:
+            model = GPTNeoForCausalLM.from_pretrained(model_name)
+
         # choose random N samples from the dataset
         samples = torch.randint(0, len(samples_dataset['data']) - 1, (N,))
 
         # Run for each sample
         for index in tqdm(samples):
+            print("Run for each sample...")
             lyrics = samples_dataset['data'][index][0]
             meaning = samples_dataset['labels'][index][0]
             artist = samples_dataset['artist'][index][0]
@@ -130,13 +142,72 @@ def compare_models(models_names, file_name, TF=False):
 
             # Run for each prompt type
             for prompt_type in tqdm(prompt_types):
-                print("Generating prompts for {}".format(prompt_type))
+                print("Run for each prompt type.\nCurrent prompt type:{}".format(prompt_type))
                 input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type)
-                evaluation_df = run_inference_on_sample(model_name=model_name, input_prompt=input_prompt)
-                evaluation_df['model'] = model_name
-                evaluation_df['prompt_type'] = prompt_type
-                full_df = full_df.concat(evaluation_df, ignore_index=True)
-                for i, row in evaluation_df.iterrows():
+
+                temperature = 0.9
+                num_return_sequence = 1,
+                TF = False
+                df_inference = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temperature'])
+
+                decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
+                for decode_method in decode_methods:
+                    # encode prompt
+                    if TF:
+                        input_ids = tokenizer.encode(input_prompt, return_tensors='tf')
+                    else:
+                        input_ids = tokenizer(input_prompt, return_tensors="pt").input_ids
+
+                    # predict
+                    if decode_method == 'greedy':
+                        # greedy
+                        outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
+                                                 temperature=temperature, num_return_sequence=num_return_sequence,
+                                                 num_return_sequences=1,
+                                                 )
+                    elif decode_method == 'beam search':
+                        # beam search with penalty on repeat
+                        outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
+                                                 num_beams=3, early_stopping=True,
+                                                 num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
+                                                 no_repeat_ngram_size=2
+                                                 )
+                    elif decode_method == 'sampling':
+                        # sampling
+                        outputs = model.generate(input_ids, do_sample=True, top_k=0,
+                                                 max_length=training_args.eval_pretrained_args.max_length,
+                                                 num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
+                                                 temperature=temperature
+                                                 )
+                    elif decode_method == 'top-k sampling':
+                        # top-k sampling
+                        outputs = model.generate(input_ids, do_sample=True, top_k=50,
+                                                 max_length=training_args.eval_pretrained_args.max_length,
+                                                 num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
+                                                 )
+                    else:  # decode_method == 'top-p sampling' (default)
+                        # top-p sampling
+                        outputs = model.generate(input_ids, do_sample=True, top_k=0, top_p=0.92,
+                                                 max_length=training_args.eval_pretrained_args.max_length,
+                                                 num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
+                                                 )
+                    # additional parameters for better decoding - repetition_penalty, min_length
+                    # decode
+                    pred_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+
+                    input_list, generated_text = [], []
+
+                    for pred in pred_text:
+                        input_list.append(input_prompt)
+                        generated_text.append(pred)
+
+                    df_curr = pd.DataFrame({'input_prompt': input_list, 'predicted_text': generated_text,
+                                            'decode_method': decode_method, 'temperature': temperature,
+                                            'model': model_name, 'prompt_type': prompt_type})
+                    df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
+
+                full_df = pd.concat([full_df, df_inference], ignore_index=True)
+                for i, row in full_df.iterrows():
                     generated, input_text = row['predicted_text'], row['input_prompt']
                     # Save to docx file
                     para = doc.add_paragraph("Model: {},\n prompt: {},\n temperature: {} \n\n"
@@ -147,8 +218,9 @@ def compare_models(models_names, file_name, TF=False):
                         = docx.enum.text.WD_COLOR_INDEX.RED
                     para.add_run("{} ".format(input_prompt)).font.highlight_color = \
                         docx.enum.text.WD_COLOR_INDEX.YELLOW
-                    para.add_run("{} \n\n\n".format(generated.split(input_prompt)[1])).font.highlight_color \
-                        = docx.enum.text.WD_COLOR_INDEX.GREEN
+                    para.add_run("{} \n\n\n".format("EMPTY" if len(generated.split(input_prompt)) <= 1
+                                                    else generated.split(input_prompt)[1])).font.highlight_color = \
+                        docx.enum.text.WD_COLOR_INDEX.GREEN
     doc.save('{}_{}.docx'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
     # save df as pickle
     full_df.to_pickle('{}_{}.pkl'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))

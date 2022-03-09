@@ -11,6 +11,7 @@ path:
   results_path: 'results'
   pretraining_folder: 'pretraining'
   after_training_folder: 'after_training'
+  output_dir: 'results'
 
 name:
   train_name: 'train_tmp'
