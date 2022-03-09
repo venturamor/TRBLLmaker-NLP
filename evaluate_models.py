@@ -200,6 +200,13 @@ def compare_models(models_names, file_name, TF=False):
 
                     for pred in pred_text:
                         input_list.append(input_prompt)
+                        pred_splitted = pred.split(input_prompt)
+                        if len(pred_splitted) <= 1:
+                            pred = "Empty"
+                        elif len(pred_splitted) == 2:
+                            pred = pred.split(input_prompt)[1]
+                        else:
+                            pred = "More than one repetition: " + pred
                         generated_text.append(pred)
 
                     df_curr = pd.DataFrame({'input_prompt': input_list, 'predicted_text': generated_text,

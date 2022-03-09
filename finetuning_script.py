@@ -88,8 +88,8 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         input_prompt = generate_prompts(lyrics=lyrics, meaning=meaning, artist=artist, title=title,
                                         prompt_type=prompt_type, for_eval=False)
 
-        df_inference = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temperature',
-                                    'model', 'prompt_type'])
+        df_inference = pd.DataFrame(columns=['example_index', 'input_prompt', 'predicted_text', 'decode_method',
+                                             'temperature', 'model', 'prompt_type'])
 
         decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
         for decode_method in decode_methods:
@@ -139,9 +139,16 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
             for pred in pred_text:
                 input_list.append(input_prompt)
+                pred_splitted = pred.split(input_prompt)
+                if len(pred_splitted) <= 1:
+                    pred = "Empty"
+                elif len(pred_splitted) == 2:
+                    pred = pred.split(input_prompt)[1]
+                else:
+                    pred = "More than one repetition: " + pred
                 generated_text.append(pred)
 
-            df_curr = pd.DataFrame({'input_prompt': input_list, 'predicted_text': generated_text,
+            df_curr = pd.DataFrame({'example_index': index, 'input_prompt': input_list, 'predicted_text': generated_text,
                                     'decode_method': decode_method, 'temperature': temperature})
             df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
 
