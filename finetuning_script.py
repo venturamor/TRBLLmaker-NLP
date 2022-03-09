@@ -58,7 +58,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
     samples_dataset = datasets.load_dataset(dataset_name)['test']
     temperature = training_args.eval_after_train_args.temperature
     print("Loaded {} samples from {}".format(len(samples_dataset), dataset_name))
-
+    num_return_sequences = training_args.eval_after_train_args.num_return_sequences
     # Set seed for reproducibility
     torch.manual_seed(21)
     np.random.seed(21)
@@ -102,34 +102,33 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
             if decode_method == 'greedy':
                 # greedy
                 outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
-                                         temperature=temperature, num_return_sequence=num_return_sequence,
-                                         num_return_sequences=1,
+                                         temperature=temperature,num_return_sequences=1,
                                          )
             elif decode_method == 'beam search':
                 # beam search with penalty on repeat
                 outputs = model.generate(input_ids, max_length=training_args.eval_pretrained_args.max_length,
                                          num_beams=3, early_stopping=True,
-                                         num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
+                                         num_return_sequences=num_return_sequences,
                                          no_repeat_ngram_size=2
                                          )
             elif decode_method == 'sampling':
                 # sampling
                 outputs = model.generate(input_ids, do_sample=True, top_k=0,
                                          max_length=training_args.eval_pretrained_args.max_length,
-                                         num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
+                                         num_return_sequences=num_return_sequences,
                                          temperature=temperature
                                          )
             elif decode_method == 'top-k sampling':
                 # top-k sampling
                 outputs = model.generate(input_ids, do_sample=True, top_k=50,
                                          max_length=training_args.eval_pretrained_args.max_length,
-                                         num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
+                                         num_return_sequences=num_return_sequences,
                                          )
             else:  # decode_method == 'top-p sampling' (default)
                 # top-p sampling
                 outputs = model.generate(input_ids, do_sample=True, top_k=0, top_p=0.92,
                                          max_length=training_args.eval_pretrained_args.max_length,
-                                         num_return_sequences=training_args.eval_pretrained_args.num_return_sequences,
+                                         num_return_sequences=num_return_sequences,
                                          )
             # additional parameters for better decoding - repetition_penalty, min_length
             # decode
