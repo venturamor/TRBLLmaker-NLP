@@ -230,6 +230,7 @@ if __name__ == '__main__':
         output_dir = os.path.join(main_path, private_args.path.output_dir, model_path)
         batch_size = training_args.train_args.batch_size
         num_train_epochs = training_args.train_args.num_train_epochs
+        training_script = os.path.join(main_path, 'transformers/examples/pytorch/language-modeling/run_clm.py') # training_script Here
 
         print("Run the following command to see the results:")
         print("nohup python {} --model_type {} --model_name_or_path {} --train_file {} --do_train --validation_file {}"
