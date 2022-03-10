@@ -30,8 +30,8 @@ data_args:
 
 train_args:
   batch_size: 2
-  num_train_epochs: 2
-  state: 0 # ["prepare_data", "train", "eval", "eval_pretrained"]
+  num_train_epochs: 4
+  state: 3 # ["prepare_data", "train", "eval", "eval_pretrained"]
   model_name: 'gpt2-medium'
   train_command: ""
   gradient_accumulation_steps: 16

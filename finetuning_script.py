@@ -69,8 +69,9 @@ def generate_txt_for_training(test_path, train_name, eval_name, prompt_type):
     samples_dataset_train = datasets.load_dataset(dataset_name)['train']
     samples_dataset_validation = datasets.load_dataset(dataset_name)['validation']
 
-    train_dataset = [generate_prompts(lyrics=row['data'][0], meaning=row['labels'][0], artist=row['artist'][0], title=row['title'][0],
-                                prompt_type=prompt_type) for row in samples_dataset_train]
+    train_dataset = [generate_prompts(lyrics=row['data'][0], meaning=row['labels'][0], artist=row['artist'][0],
+                                      title=row['title'][0], prompt_type=prompt_type)
+                     for row in samples_dataset_train]
 
     # validation_dataset = [generate_prompts(lyrics=row['data'], meaning=row['labels'], artist=row['artist'],
     #                                        title=row['title'], prompt_type=prompt_type)
@@ -155,43 +156,57 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
         for index, (lyrics, meaning, artist, title) in \
                 tqdm(enumerate(zip(samples['data'], samples['labels'], samples['artist'], samples['title']))):
-            # Generate the prompt
 
-            # Run for each prompt type
             prompt_type = training_args.prompt_args.prompt_type
-            print("Generating prompts for {}".format(prompt_type))
-            input_prompt = generate_prompts(lyrics=lyrics, meaning=meaning, artist=artist, title=title,
-                                            prompt_type=prompt_type, for_eval=True)
+            # Run for each prompt type
+            if after_training:
+                prompt_types = [prompt_type]
+            else:
+                prompt_types = ['lyrics_meaning', 'lyrics_meaning_with_metadata', 'song', 'song_with_metadata',
+                                'question_context', 'question_context_with_metadata', None]
+            for prompt_type in tqdm(prompt_types):
+                print("Generating prompts for {}".format(prompt_type))
+                input_prompt = generate_prompts(lyrics=lyrics[0], meaning=meaning[0], artist=artist[0],
+                                                title=title[0], prompt_type=prompt_type,
+                                                for_eval=True)
 
-            decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
-            for decode_method in decode_methods:
-                outputs = decode_fn(model=model, tokenizer=tokenizer, input_prompt=input_prompt, decode_method=decode_method,
-                        temperature=temperature, num_return_sequences=num_return_sequences)
+                decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
+                for decode_method in decode_methods:
+                    outputs = decode_fn(model=model, tokenizer=tokenizer, input_prompt=input_prompt,
+                                        decode_method=decode_method, temperature=temperature,
+                                        num_return_sequences=num_return_sequences)
 
-                # decode
-                pred_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                    # decode
+                    pred_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
-                input_list, generated_text_list, index_list = [], [], []
-                decode_method_list, temperature_list = [], []
+                    input_list, generated_text_list, predicted_meaning_list, index_list = [], [], [], []
+                    decode_method_list, temperature_list = [], []
 
-                for pred in pred_text:
-                    input_list.append(input_prompt)
-                    index_list.append(index)
-                    decode_method_list.append(decode_method)
-                    temperature_list.append(temperature)
-                    pred_splitted = pred.split(input_prompt)
-                    if len(pred_splitted) <= 1:
-                        pred = "Empty"
-                    elif len(pred_splitted) == 2:
-                        pred = pred_splitted[1]
-                    else:
-                        pred = "More than one repetition: " + pred
-                    generated_text_list.append(pred)
-                df_curr = pd.DataFrame({'example_index': index_list, 'input_prompt': input_list,
-                                        'predicted_text': generated_text_list, 'decode_method': decode_method_list,
-                                        'temperature': temperature_list, 'model': model_name, 'prompt_type': prompt_type,
-                                        'meaning': meaning})
-                df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
+                    for pred in pred_text:
+                        input_list.append(input_prompt)
+                        index_list.append(index)
+                        generated_text_list.append(pred)
+                        decode_method_list.append(decode_method)
+                        temperature_list.append(temperature)
+                        pred_splitted = pred.split(input_prompt)
+                        if len(pred_splitted) <= 1:
+                            pred = "Empty"
+                        elif len(pred_splitted) == 2:
+                            pred = pred_splitted[1]
+                        else:
+                            pred = "More than one repetition: " + pred
+                        predicted_meaning_list.append(pred)
+                    df_curr = pd.DataFrame({'example_index': index_list,
+                                            'input_prompt': input_list,
+                                            'predicted_text': generated_text_list,
+                                            'predicted_meaning': predicted_meaning_list,
+                                            'decode_method': decode_method_list,
+                                            'temperature': temperature_list,
+                                            'model': model_name,
+                                            'prompt_type': prompt_type,
+                                            'gt_meaning': meaning, 'lyrics': lyrics, 'artist': artist, 'title': title
+                                            })
+                    df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
 
     # save inference results
     for i, row in df_inference.iterrows():
@@ -223,20 +238,24 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
 if __name__ == '__main__':
     states = ["prepare_data", "train", "eval", "eval_pretrained"]
-    state = 2 #training_args.train_args.state
+    state = training_args.train_args.state
     curr_state = states[state]
     main_path = private_args.path.main_path
+    prompt_type = training_args.prompt_args.prompt_type
     # Prepare the data
     if curr_state == "prepare_data":
+        print("Preparing data...")
         data_for_finetuning_path = os.path.join(main_path, training_args.path_args.data_for_finetuning_path)
         generate_txt_for_training(data_for_finetuning_path, train_name=training_args.path_args.train_name,
                                   eval_name=training_args.path_args.eval_name,
-                                  prompt_type=training_args.prompt_args.prompt_type)
+                                  prompt_type=prompt_type)
     elif curr_state == "train":
+        print("preparing args for training...")
         # Run the mode
         model_type = 'gpt2-medium'
         model_name_or_path = 'gpt2-medium'
-        model_path = "checkpoint_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        model_path = "checkpoint_{}_{}_{}".format(model_type, prompt_type,
+                                                  datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
         # Set model_path for evaluation after training
         set_specific_config("private_config.yaml", "path", "model_path", model_path)
         train_file = os.path.join(main_path, training_args.path_args.data_for_finetuning_path,
@@ -264,6 +283,7 @@ if __name__ == '__main__':
         print(train_command)
 
     if curr_state == "eval":
+        print("evaluating...")
         model_path = private_args.path.model_path
         output_dir = training_args.path_args.output_dir
         model_path = os.path.join(main_path, output_dir, model_path)
@@ -278,6 +298,7 @@ if __name__ == '__main__':
                                     after_training=True)
 
     elif curr_state == "eval_pretrained":
+        print("evaluating pretrained model...")
         number_of_samples = training_args.eval_args.num_samples
         main_path = private_args.path.main_path
         results_path = training_args.path_args.results_path
