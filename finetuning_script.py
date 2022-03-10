@@ -241,7 +241,7 @@ if __name__ == '__main__':
         model_path = private_args.path.model_path
         output_dir = private_args.path.output_dir
         model_path = os.path.join(main_path, output_dir, model_path)
-        model_name = private_args.name.model_name
+        model_name = training_args.train_args.model_name
         # Evaluate model on test data - this will take a while
         results_path = private_args.path.results_path
         after_training_folder = private_args.path.after_training_folder
