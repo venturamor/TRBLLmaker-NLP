@@ -29,8 +29,8 @@ def run_inference_on_sample(model_name, input_prompt, decode_method_index=1, tem
         model = GPTNeoForCausalLM.from_pretrained(model_name)
     # print("Model: {} loaded".format(model_name))
 
-    df_inference = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temperature'])
-
+    df_inference = pd.DataFrame(columns=['example_index', 'input_prompt', 'predicted_text', 'decode_method',
+                                         'temperature', 'model', 'prompt_type'])
     decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
     for decode_method in decode_methods:
         # encode prompt
@@ -96,11 +96,7 @@ def compare_models(models_names, file_name, TF=False):
                     'question_context', 'question_context_with_metadata', None]
 
     # Variables
-    max_input_length = 512
-    max_target_length = 512
-    temperature = 0.9
     N = 2
-    num_return_sequences = 2
     full_df = pd.DataFrame(columns=['input_prompt', 'predicted_text', 'decode_method', 'temperature',
                                     'model', 'prompt_type'])
     # create a doc file to write the generated prompts
@@ -143,7 +139,8 @@ def compare_models(models_names, file_name, TF=False):
             # Run for each prompt type
             for prompt_type in tqdm(prompt_types):
                 print("Run for each prompt type.\nCurrent prompt type:{}".format(prompt_type))
-                input_prompt = generate_prompts(lyrics, meaning, artist, title, prompt_type)
+                input_prompt = generate_prompts(lyrics=lyrics, meaning=meaning, artist=artist, title=title,
+                                                prompt_type=prompt_type, for_eval=True)
 
                 temperature = 0.9
                 num_return_sequence = 1,
@@ -199,6 +196,13 @@ def compare_models(models_names, file_name, TF=False):
 
                     for pred in pred_text:
                         input_list.append(input_prompt)
+                        pred_splitted = pred.split(input_prompt)
+                        if len(pred_splitted) <= 1:
+                            pred = "Empty"
+                        elif len(pred_splitted) == 2:
+                            pred = pred.split(input_prompt)[1]
+                        else:
+                            pred = "More than one repetition: " + pred
                         generated_text.append(pred)
 
                     df_curr = pd.DataFrame({'input_prompt': input_list, 'predicted_text': generated_text,

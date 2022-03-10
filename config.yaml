@@ -36,6 +36,7 @@ train_args:
   # args for GPT
   batch_size: 2
   num_train_epochs: 2
+  state: 0 # ["prepare_data", "train", "eval", "eval_pretrained"]
 
   prompt:
     add_prompt: True
@@ -51,6 +52,7 @@ eval_pretrained_args:
   temperature: 0.95
   max_length: 512
   num_return_sequences: 1
+  num_samples: 10
 
 eval_after_train_args:
   temperature: 0.95

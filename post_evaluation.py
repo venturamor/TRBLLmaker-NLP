@@ -15,8 +15,9 @@ import pandas as pd
 import numpy as np
 
 # Load pickl as a dataframe
-pickle_name = 'filename.pkl'
-gen_df = pd.read_pickle(pickle_name)
-
-# Compare between different models and parameters
-
+path = '/home/tok/TRBLLmaker/results/pretraining/'
+pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
+df = pd.read_pickle(path + pickle_name)
+# input_prompt, 'predicted_text', 'decode_method', 'temperature'
+# compare the same prompt with different models
+df.groupby(['prompt', 'model']).mean()
