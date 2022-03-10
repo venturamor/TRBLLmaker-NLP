@@ -8,6 +8,7 @@ import yaml
 import os
 import datetime
 import re
+from wordcloud import WordCloud, STOPWORDS
 import string
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
@@ -34,6 +35,34 @@ def explore_data():
         lyrics_length.append(len(lyrics.split()))
         annotation_length.append(len(annotation.split()))
 
+
+    #  Prepare data for wordcloud
+    comment_words = ''
+    stopwords = set(STOPWORDS)
+    # iterate data
+    for sampleTuple in samples.itertuples():
+        lyrics = sampleTuple.text.split()
+        annotation = sampleTuple.annotation.split()
+        for word in lyrics:
+            if word not in stopwords and len(word) > 2:
+                comment_words += ' ' + word.lower() + ' '
+        for word in annotation:
+            if word not in stopwords and len(word) > 2:
+                comment_words += ' ' + word.lower() + ' '
+
+
+    wordcloud = WordCloud(width=800, height=800,
+                          background_color='white',
+                          stopwords=stopwords,
+                          min_font_size=10).generate(comment_words)
+
+    # plot the WordCloud image
+    plt.figure(figsize=(8, 8), facecolor=None)
+    plt.imshow(wordcloud)
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.show()
+
     # Plot statistics
     # Genre distribution
     # change songs.genre "artists" to "unknown"
@@ -52,36 +81,23 @@ def explore_data():
     plt.tight_layout()
     plt.show()
     # Song length histogram
-    plt.hist(lyrics_length, bins=100, range=(0, 10000),
+    plt.hist(lyrics_length, bins=100, range=(0, 100),
              color='blue', edgecolor='black', linewidth=1.2)
     plt.title('Distribution of song samples length')
-    plt.xlabel('Length')
+    plt.xlabel('Number of words')
     plt.ylabel('Number of songs')
     plt.show()
     # Boxplot songs length
     plt.boxplot(lyrics_length)
     plt.title('Boxplot of song samples length')
-    plt.xlabel('Length')
+    plt.xlabel('Number of words')
     plt.ylabel('Number of song samples')
     plt.show()
-    # Text length distribution (text of the annotation)
-    plt.hist(lyrics_length, bins=100, range=(0, 10000), density=True,
-             color='blue', edgecolor='black', linewidth=1.2)
-    plt.title('Distribution of examples length')
-    plt.xlabel('Length')
-    plt.ylabel('Number of examples')
-    plt.show()
-    # Plot Boxplot of songs text length
-    plt.boxplot(lyrics_length)
-    plt.title('Boxplot of examples length')
-    plt.xlabel('Length')
-    plt.ylabel('Number of examples')
-    plt.show()
     # Annotation length distribution
-    plt.hist(annotation_length, bins=100, range=(0, 2000),
+    plt.hist(annotation_length, bins=100, range=(0, 300),
              color='blue', edgecolor='black', linewidth=1.2)
     plt.title('Distribution of annotations length')
-    plt.xlabel('Length')
+    plt.xlabel('Number of words')
     plt.ylabel('Number of annotations')
     plt.tight_layout()
     plt.show()

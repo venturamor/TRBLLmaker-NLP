@@ -80,8 +80,8 @@ def split_by_songs(songs_json_path, samples_json_path):
     :return: save new jsons (train, test, validation) per songs and samples
     """
 
-    test_size = config_args["train_args"]["test_size"]
-    take_mini = config_args["train_args"]["take_mini"]
+    test_size = config_args["data_args"]["test_size"]
+    take_mini = config_args["data_args"]["take_mini"]
 
     songs_df = pd.read_json(songs_json_path)
     samples_df = pd.read_json(samples_json_path)
