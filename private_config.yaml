@@ -16,5 +16,5 @@ path:
 name:
   train_name: 'train_tmp'
   eval_name: 'eval_tmp'
-  model_name: 'gpt2-medium'
+#  model_name: 'gpt2-medium'
 

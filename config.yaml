@@ -32,6 +32,7 @@ train_args:
   batch_size: 2
   num_train_epochs: 2
   state: 0 # ["prepare_data", "train", "eval", "eval_pretrained"]
+  model_name: 'gpt2-medium'
   #  eval_steps: 10
   #  learning_rate: 1.0e-07
   #  save_total_limit: 3
