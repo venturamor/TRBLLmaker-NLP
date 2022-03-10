@@ -30,9 +30,12 @@ data_args:
 
 train_args:
   batch_size: 2
-  num_train_epochs: 2
-  state: 0 # ["prepare_data", "train", "eval", "eval_pretrained"]
+  num_train_epochs: 4
+  state: 3 # ["prepare_data", "train", "eval", "eval_pretrained"]
   model_name: 'gpt2-medium'
+  train_command: ""
+  gradient_accumulation_steps: 16
+  eval_steps: 128
   #  eval_steps: 10
   #  learning_rate: 1.0e-07
   #  save_total_limit: 3
@@ -50,3 +53,12 @@ eval_args:
   num_return_sequences: 1
   num_samples: 10
 
+path_args:
+  data_for_finetuning_path: 'data/tmp'
+  train_data_path: 'data/tmp/train'
+  results_path: 'results'
+  pretraining_folder: 'pretraining'
+  after_training_folder: 'after_training'
+  output_dir: 'results'
+  train_name: 'train_tmp'
+  eval_name: 'eval_tmp'

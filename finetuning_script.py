@@ -14,9 +14,10 @@ from tqdm import tqdm
 from prompts import *
 from evaluate_models import *
 from config_parser import *
+from set_config import set_specific_config
 
 
-def decode_fn(model, tokenizer, input_prompt, decode_method, TF, temperature, num_return_sequences):
+def decode_fn(model, tokenizer, input_prompt, decode_method, temperature, num_return_sequences):
     # additional parameters for better decoding - repetition_penalty, min_length
     # encode prompt
     #if TF:
@@ -68,8 +69,9 @@ def generate_txt_for_training(test_path, train_name, eval_name, prompt_type):
     samples_dataset_train = datasets.load_dataset(dataset_name)['train']
     samples_dataset_validation = datasets.load_dataset(dataset_name)['validation']
 
-    train_dataset = [generate_prompts(lyrics=row['data'][0], meaning=row['labels'][0], artist=row['artist'][0], title=row['title'][0],
-                                prompt_type=prompt_type) for row in samples_dataset_train]
+    train_dataset = [generate_prompts(lyrics=row['data'][0], meaning=row['labels'][0], artist=row['artist'][0],
+                                      title=row['title'][0], prompt_type=prompt_type)
+                     for row in samples_dataset_train]
 
     # validation_dataset = [generate_prompts(lyrics=row['data'], meaning=row['labels'], artist=row['artist'],
     #                                        title=row['title'], prompt_type=prompt_type)
@@ -96,11 +98,11 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
     """
 
     if after_training:
-        TF = True  # Currently using TensorFlow for evaluation of the model (not PyTorch)
+        # TF = True  # Currently using TensorFlow for evaluation of the model (not PyTorch)
         model_names = [model_name]
         model_paths = [model_path]
     else:
-        TF = False
+        # TF = False
         model_names = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
         model_paths = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
 
@@ -140,46 +142,71 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         else:
             model = GPTNeoForCausalLM.from_pretrained(model_path)
 
-        # Run for each sample
+        # def preprocess_function(samples):
+        #     output = tokenizer(samples["data"])
+        #     return output
+        #
+        # # Run for each sample
+        # tokenized_datasets = samples_dataset.map(
+        #     preprocess_function,
+        #     batched=True,
+        #     remove_columns=samples_dataset.column_names,
+        # )
+        # print(tokenized_datasets.column_names)
+
         for index, (lyrics, meaning, artist, title) in \
                 tqdm(enumerate(zip(samples['data'], samples['labels'], samples['artist'], samples['title']))):
-            # Generate the prompt
 
-            # Run for each prompt type
             prompt_type = training_args.prompt_args.prompt_type
-            print("Generating prompts for {}".format(prompt_type))
-            input_prompt = generate_prompts(lyrics=lyrics, meaning=meaning, artist=artist, title=title,
-                                            prompt_type=prompt_type, for_eval=True)
+            # Run for each prompt type
+            if after_training:
+                prompt_types = [prompt_type]
+            else:
+                prompt_types = ['lyrics_meaning', 'lyrics_meaning_with_metadata', 'song', 'song_with_metadata',
+                                'question_context', 'question_context_with_metadata', None]
+            for prompt_type in tqdm(prompt_types):
+                print("Generating prompts for {}".format(prompt_type))
+                input_prompt = generate_prompts(lyrics=lyrics[0], meaning=meaning[0], artist=artist[0],
+                                                title=title[0], prompt_type=prompt_type,
+                                                for_eval=True)
 
-            decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
-            for decode_method in decode_methods:
-                outputs = decode_fn(model=model, tokenizer=tokenizer, input_prompt=input_prompt, decode_method=decode_method,
-                          TF=TF, temperature=temperature, num_return_sequences=num_return_sequences)
+                decode_methods = ['greedy', 'beam search', 'sampling', 'top-k sampling', 'top-p sampling']
+                for decode_method in decode_methods:
+                    outputs = decode_fn(model=model, tokenizer=tokenizer, input_prompt=input_prompt,
+                                        decode_method=decode_method, temperature=temperature,
+                                        num_return_sequences=num_return_sequences)
 
-                # decode
-                pred_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                    # decode
+                    pred_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
-                input_list, generated_text_list, index_list = [], [], []
-                decode_method_list, temperature_list = [], []
+                    input_list, generated_text_list, predicted_meaning_list, index_list = [], [], [], []
+                    decode_method_list, temperature_list = [], []
 
-                for pred in pred_text:
-                    input_list.append(input_prompt)
-                    index_list.append(index)
-                    decode_method_list.append(decode_method)
-                    temperature_list.append(temperature)
-                    pred_splitted = pred.split(input_prompt)
-                    if len(pred_splitted) <= 1:
-                        pred = "Empty"
-                    elif len(pred_splitted) == 2:
-                        pred = pred_splitted[1]
-                    else:
-                        pred = "More than one repetition: " + pred
-                    generated_text_list.append(pred)
-                df_curr = pd.DataFrame({'example_index': index_list, 'input_prompt': input_list,
-                                        'predicted_text': generated_text_list, 'decode_method': decode_method_list,
-                                        'temperature': temperature_list, 'model': model_name, 'prompt_type': prompt_type,
-                                        'meaning': meaning})
-                df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
+                    for pred in pred_text:
+                        input_list.append(input_prompt)
+                        index_list.append(index)
+                        generated_text_list.append(pred)
+                        decode_method_list.append(decode_method)
+                        temperature_list.append(temperature)
+                        pred_splitted = pred.split(input_prompt)
+                        if len(pred_splitted) <= 1:
+                            pred = "Empty"
+                        elif len(pred_splitted) == 2:
+                            pred = pred_splitted[1]
+                        else:
+                            pred = "More than one repetition: " + pred
+                        predicted_meaning_list.append(pred)
+                    df_curr = pd.DataFrame({'example_index': index_list,
+                                            'input_prompt': input_list,
+                                            'predicted_text': generated_text_list,
+                                            'predicted_meaning': predicted_meaning_list,
+                                            'decode_method': decode_method_list,
+                                            'temperature': temperature_list,
+                                            'model': model_name,
+                                            'prompt_type': prompt_type,
+                                            'gt_meaning': meaning, 'lyrics': lyrics, 'artist': artist, 'title': title
+                                            })
+                    df_inference = pd.concat([df_inference, df_curr], ignore_index=True)
 
     # save inference results
     for i, row in df_inference.iterrows():
@@ -211,40 +238,59 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
 if __name__ == '__main__':
     states = ["prepare_data", "train", "eval", "eval_pretrained"]
-    state = 3
+    state = training_args.train_args.state
     curr_state = states[state]
     main_path = private_args.path.main_path
+    prompt_type = training_args.prompt_args.prompt_type
     # Prepare the data
     if curr_state == "prepare_data":
-        data_for_finetuning_path = os.path.join(main_path, private_args.path.data_for_finetuning_path)
-        generate_txt_for_training(data_for_finetuning_path, train_name=private_args.name.train_name,
-                                  eval_name=private_args.name.eval_name,
-                                  prompt_type=training_args.prompt_args.prompt_type)
+        print("Preparing data...")
+        data_for_finetuning_path = os.path.join(main_path, training_args.path_args.data_for_finetuning_path)
+        generate_txt_for_training(data_for_finetuning_path, train_name=training_args.path_args.train_name,
+                                  eval_name=training_args.path_args.eval_name,
+                                  prompt_type=prompt_type)
     elif curr_state == "train":
+        print("preparing args for training...")
         # Run the mode
         model_type = 'gpt2-medium'
         model_name_or_path = 'gpt2-medium'
-        model_path = private_args.path.model_path
-        train_file = os.path.join(main_path, private_args.path.data_for_finetuning_path, private_args.name.train_name)
-        validation_file = os.path.join(main_path, private_args.path.data_for_finetuning_path, private_args.name.eval_name)
-        output_dir = os.path.join(main_path, private_args.path.output_dir, model_path)
+        model_path = "checkpoint_{}_{}_{}".format(model_type, prompt_type,
+                                                  datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        # Set model_path for evaluation after training
+        set_specific_config("private_config.yaml", "path", "model_path", model_path)
+        train_file = os.path.join(main_path, training_args.path_args.data_for_finetuning_path,
+                                  training_args.path_args.train_name)
+        validation_file = os.path.join(main_path, training_args.path_args.data_for_finetuning_path,
+                                       training_args.path_args.eval_name)
+        output_dir = os.path.join(main_path, training_args.path_args.output_dir, model_path)
         batch_size = training_args.train_args.batch_size
         num_train_epochs = training_args.train_args.num_train_epochs
-        training_script = os.path.join(main_path, 'transformers/examples/pytorch/language-modeling/run_clm.py') # training_script Here
+        training_script = os.path.join(main_path, 'transformers/examples/pytorch/language-modeling/run_clm.py')
+        gradient_accumulation_steps = training_args.train_args.gradient_accumulation_steps
+        eval_steps = training_args.train_args.eval_steps
+        logging_steps = eval_steps
+        train_command = "nohup python {} --model_type {} --model_name_or_path {} --train_file {} --do_train " \
+                        "--validation_file {} --do_eval --per_gpu_train_batch_size {} --save_steps -1 " \
+                        "--num_train_epochs {} --fp16 --output_dir {} --overwrite_output_dir " \
+                        "--gradient_accumulation_steps {} --evaluation_strategy {} --eval_steps {} " \
+                        "--logging_strategy {} --logging_steps {} " \
+                        "& tail -f nohup.out".format(training_script, model_type, model_name_or_path,
+                                                     train_file + '.txt', validation_file + '.txt', batch_size,
+                                                     num_train_epochs, output_dir, gradient_accumulation_steps,
+                                                     "steps", eval_steps, "steps", logging_steps)
 
-        print("Run the following command to see the results:")
-        print("nohup python {} --model_type {} --model_name_or_path {} --train_file {} --do_train --validation_file {}"
-              " --do_eval --per_gpu_train_batch_size {} --save_steps -1 --num_train_epochs {} --fp16 --output_dir {}"
-              " --overwrite_output_dir & tail -f nohup.out".format(training_script, model_type, model_name_or_path, train_file + '.txt',
-                validation_file + '.txt', batch_size, num_train_epochs, output_dir))
+        print("Run the following command to train:")
+        print(train_command)
+
     if curr_state == "eval":
+        print("evaluating...")
         model_path = private_args.path.model_path
-        output_dir = private_args.path.output_dir
+        output_dir = training_args.path_args.output_dir
         model_path = os.path.join(main_path, output_dir, model_path)
         model_name = training_args.train_args.model_name
         # Evaluate model on test data - this will take a while
-        results_path = private_args.path.results_path
-        after_training_folder = private_args.path.after_training_folder
+        results_path = training_args.path_args.results_path
+        after_training_folder = training_args.path_args.after_training_folder
         file_name = "predictions_after_training"
         file_path = os.path.join(main_path, results_path, after_training_folder, file_name)
         number_of_samples = training_args.eval_args.num_samples
@@ -252,10 +298,11 @@ if __name__ == '__main__':
                                     after_training=True)
 
     elif curr_state == "eval_pretrained":
+        print("evaluating pretrained model...")
         number_of_samples = training_args.eval_args.num_samples
         main_path = private_args.path.main_path
-        results_path = private_args.path.results_path
-        pretraining_folder = private_args.path.pretraining_folder
+        results_path = training_args.path_args.results_path
+        pretraining_folder = training_args.path_args.pretraining_folder
         file_name = "predictions_before_training"
         file_path = os.path.join(main_path, results_path, pretraining_folder, file_name)
         evaluate_model_on_test_data("", "", file_path, number_of_samples=number_of_samples,
