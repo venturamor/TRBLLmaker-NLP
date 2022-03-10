@@ -40,7 +40,7 @@ _URLS = {
 
 class TRBLLDataset(datasets.GeneratorBasedBuilder):
     """This is a dataset of songs created for TRBLLmaker"""
-    version = str(training_args.train_args.dataset_version) + '.' + str(training_args.train_args.take_mini)
+    version = str(training_args.data_args.dataset_version) + '.' + str(training_args.data_args.take_mini)
     VERSION = datasets.Version(version)
 
     name = "trbll_dataset"
@@ -67,11 +67,11 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager):
 
-        data_dir = config_args["train_args"]["data_dir"]
-        data_types = config_args["train_args"]["data_type"]
-        data_type = config_args["train_args"]["specific_type"]
-        take_mini = config_args["train_args"]["take_mini"]
-        str_parts = config_args["train_args"]["parts"]
+        data_dir = config_args["data_args"]["data_dir"]
+        data_types = config_args["data_args"]["data_type"]
+        data_type = config_args["data_args"]["specific_type"]
+        take_mini = config_args["data_args"]["take_mini"]
+        str_parts = config_args["data_args"]["parts"]
         if take_mini != 0:
             str_parts = [part + '_mini.json' for part in str_parts]
         else:
@@ -108,12 +108,10 @@ class TRBLLDataset(datasets.GeneratorBasedBuilder):
     # method parameters are unpacked from `gen_kwargs` as given in `_split_generators`
     def _generate_examples(self, filepath, split):
         df = pd.read_json(filepath)
-        data_col = config_args["train_args"]["data_col"]
-        label_col = config_args["train_args"]["label_col"]
         for index, row in df.iterrows():
             yield index, {
-                "data": [row[data_col]],
-                "labels": [row[label_col]],
+                "data": [row['text']],
+                "labels": [row['annotation']],
                 "title": [row["title"]],
                 "artist": [row["artist"]],
             }

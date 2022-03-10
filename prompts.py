@@ -16,7 +16,7 @@ def generate_prompts(lyrics, meaning, artist="artist", title="song", prompt_type
     if for_eval:
         meaning = ""
     else:
-        meaning = " " + meaning[0]
+        meaning = " " + meaning
     if prompt_type == "lyrics_meaning":
         data = "lyrics: {}. meaning:{}".format(lyrics, meaning)
     elif prompt_type == "lyrics_meaning_with_metadata":
