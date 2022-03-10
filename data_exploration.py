@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import docx
+from docx.enum.text import WD_COLOR_INDEX
 from box import Box
 import yaml
 import os
@@ -18,8 +19,8 @@ def explore_data():
         training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
 
     # Load data
-    samples = pd.read_json('jsons/samples_final.json')
-    songs = pd.read_json('jsons/songs_final.json')
+    samples = pd.read_json('../jsons/samples_cleaned.json')
+    songs = pd.read_json('../jsons/songs_cleaned.json')
 
     # Calculate statistics
     lyrics_length = []
@@ -178,3 +179,4 @@ def clean_data():
 if __name__ == '__main__':
     # clean_data()
     explore_data()
+    print('done')

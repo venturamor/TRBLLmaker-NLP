@@ -1,7 +1,7 @@
 import pandas as pd
 import os
+import sys
 import datasets
-from transformers import GPT2Tokenizer
 import nltk
 from nltk.tokenize import word_tokenize
 # from nltk.corpus import stopwords
@@ -13,6 +13,8 @@ import yaml
 from tqdm import tqdm
 from prompts import *
 from config_parser import *
+
+
 # nltk.download()
 
 def calc_rouge(sen_a, sen_b):
@@ -24,6 +26,7 @@ def calc_rouge(sen_a, sen_b):
     rouge1 = rouge_score['rouge1'][precentile][score_type]
     rouge2 = rouge_score['rouge2'][precentile][score_type]
     return rouge1, rouge2
+
 
 def calc_cosine_similarity_2_sentences(sen_a, sen_b):
     """
@@ -64,22 +67,8 @@ def calc_cosine_similarity_2_sentences(sen_a, sen_b):
     return cosine
 
 
-def post_eval():
-    # path to evaluate pickle
-    before_folder = 'before_training'
-    after_folder = 'after_training'
-    results_folder = private_args.path.results_path
-
-    pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
-    # Load pickle as a dataframe
-    pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
-    pickle_name2 = 'predictions_before_training_2022-03-10-15-10-28.pkl'
-    df = pd.read_pickle(os.path.join(pickles_folder, pickle_name))
-    df2 = pd.read_pickle(os.path.join(pickles_folder, pickle_name2))
-    #DF columns:
-    #'example_index', 'input_prompt', 'predicted_text', 'decode_method', 'temperature', 'model', 'prompt_type', 'meaning'
-
-    # todo: remove splitting the prediction - duplicated ( already done in funetunings_scripts)
+# todo: remove splitting the prediction - duplicated ( already done in funetunings_scripts)
+def fix_columns(df):
     predicted_meaning = []
     gt_meaning = []
     for in_prompt, pred in zip(df['input_prompt'], df['predicted_text']):
@@ -95,8 +84,24 @@ def post_eval():
 
     df['predicted_meaning'] = predicted_meaning
 
-    df['gt_meaning'] = predicted_meaning #TODO: delete
-    df['lyrics'] = df['input_prompt'] #TODO: delete
+    df['gt_meaning'] = predicted_meaning  # TODO: delete
+    df['lyrics'] = df['input_prompt']  # TODO: delete
+    return df
+
+
+def post_eval():
+    # path to evaluate pickle
+    before_folder = 'before_training'
+    after_folder = 'after_training'
+    results_folder = config_args['path_args']['results_path']
+
+    pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
+    # Load pickle as a dataframe
+    pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
+    df = pd.read_pickle(os.path.join(pickles_folder, pickle_name))
+
+    # todo: remove
+    df = fix_columns(df)
 
     # calculate eval_metrices - (input, prediction), (label, prediction)
     cos_pred_lyrics_l, cos_pred_label_l, rouge1_l, rouge2_l = [], [], [], []
@@ -109,9 +114,10 @@ def post_eval():
         # rouge
         rouge1, rouge2 = calc_rouge(pred, label)
 
-        scores = {'cos_pred_lyrics': cos_pred_lyrics, 'cos_pred_label': cos_pred_label, 'rouge1': rouge1, 'rouge2': rouge2}
-        weighted_scores = [scores[k]*v for k, v in weights_per_metric.items()]
-        total_score = sum(weighted_scores) - 2 * weighted_scores[-1]  # sum of all minus similarity to lyrics
+        scores = {'cos_pred_lyrics': cos_pred_lyrics, 'cos_pred_label': cos_pred_label, 'rouge1': rouge1,
+                  'rouge2': rouge2}
+        weighted_scores = [scores[k] * v for k, v in weights_per_metric.items()]
+        total_score = sum(weighted_scores) - 2 * weighted_scores[0]  # sum of all minus similarity to lyrics
 
         # appends
         cos_pred_lyrics_l.append(cos_pred_lyrics)
@@ -124,15 +130,54 @@ def post_eval():
     df['rouge2'] = rouge2_l
     df['cos_pred_label'] = cos_pred_label_l
     df['cos_pred_lyrics'] = cos_pred_lyrics_l
-    df['total_score'] = total_score
-
+    df['total_score'] = total_score_l
+    df.to_pickle("./example_to_analysis.pkl")
     print('done')
-#
+    return df
+
+
+def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_name: str):
+    """
+
+    :param df:
+    :param compare_param: list of strings - order - hirrechy - column - model, prompt, decode, any other...
+    :return:
+    """
+    df = pd.read_pickle("./example_to_analysis.pkl") #TODO: remove
+    # df_analysis = pd.DataFrame()
+
+    compare_params = ['model', 'prompt_type', 'decode_method']#TODO: remove
+    score_name = 'total_score' #TODO: remove
+
+    h = len(compare_params)  # hierarchies
+    for ind_param in range(h):
+        gk = df.groupby(compare_params[:ind_param+1])
+        mean_gk = gk[score_name].mean()
+        median_gk = gk[score_name].median()
+        # todo: create docx - fix
+        # txt_file_name = "analysis_" + pickle_name + datetime.datetime.today().strftime('%d%m%y_%H%M')
+        # sys.stdout = open(txt_file_name, "a")
+        print('Median:\n', median_gk)
+        print('Mean:\n', mean_gk)
+        # sys.stdout.close()
+
+
+
 
 if __name__ == '__main__':
-  post_eval()
+    # path to evaluate pickle
+    before_folder = 'before_training'
+    after_folder = 'after_training'
+    results_folder = config_args['path_args']['results_path']
 
+    pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
+    # Load pickle as a dataframe
+    pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
+    df = pd.read_pickle(os.path.join(pickles_folder, pickle_name))
 
+    df = post_eval()
+    compare_params = ['model', 'prompt_type', 'decode_method']
+    score_name = 'total_score'
 
 # #---------------------------------------------------------------
 # # create a doc file to write the generated prompts
