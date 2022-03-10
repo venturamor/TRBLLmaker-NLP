@@ -17,7 +17,7 @@ import numpy as np
 folder = 'after_training'
 # Load pickl as a dataframe
 path = '/home/tok/TRBLLmaker/results/{}/'.format(folder)
-pickle_name = 'predictions_after_training_2022-03-10-12-20-04.pkl'
+pickle_name = 'predictions_after_training_2022-03-10-15-10-28.pkl'
 df = pd.read_pickle(path + pickle_name)
 #DF columns:
 #'example_index', 'input_prompt', 'predicted_text', 'decode_method', 'temperature', 'model', 'prompt_type', 'meaning'
