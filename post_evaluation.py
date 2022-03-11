@@ -159,14 +159,14 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
 
 if __name__ == '__main__':
     # path to evaluate pickle
-    before_folder = 'before_training'
-    after_folder = 'after_training'
-    results_folder = config_args.path_args.results_path
+    before_folder = training_args.path_args.pretraining_folder
+    after_folder = training_args.path_args.after_training_folder
+    results_folder = training_args.path_args.results_path
 
     pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
     # Load pickle as a dataframe
     # pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
-    pickle_name = 'predictions_before_training_2022-03-10-12-26-46.pkl'
+    pickle_name = 'predictions_before_training_2022-03-11-13-31-27.pkl'
     pickle_path = os.path.join(pickles_folder, pickle_name)
     # df = pd.read_pickle(pickle_path)
 

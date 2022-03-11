@@ -119,7 +119,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
     np.random.seed(21)
 
     # take only a subset of the test data
-    all_test_data, samples = train_test_split(samples_dataset, test_size=number_of_samples, random_state=42)
+    all_test_data, samples = train_test_split(samples_dataset, test_size=1, random_state=5)
 
     # create a doc file to write the generated prompts
     doc = docx.Document()
@@ -128,7 +128,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
     # Dataframe to store the results
     df_inference = pd.DataFrame(columns=['example_index', 'input_prompt', 'predicted_text', 'decode_method',
-                                         'temperature', 'model', 'prompt_type', 'meaning'])
+                                         'temperature', 'model', 'prompt_type', 'gt_meaning'])
 
     # Loop over the models
     for model_name, model_path in tqdm(zip(model_names, model_paths)):
@@ -233,7 +233,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
     for i, row in df_inference.iterrows():
         generated, input_text = row['predicted_text'], row['input_prompt']
         model_name, prompt_type, temperature = row['model'], row['prompt_type'], row['temperature']
-        meaning = row['meaning']
+        meaning = row['gt_meaning']
 
         generated = "EMPTY" if len(generated.split(input_text)) <= 1 else generated.split(input_text)[1]
         # Save to docx file
