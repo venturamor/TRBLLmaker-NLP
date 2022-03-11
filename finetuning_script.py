@@ -17,13 +17,14 @@ from config_parser import *
 from set_config import set_specific_config
 
 
-def decode_fn(model, tokenizer, input_prompt, decode_method, temperature, num_return_sequences):
+def decode_fn(model, tokenizer, input_prompt, decode_method, temperature, num_return_sequences, max_input_length):
     # additional parameters for better decoding - repetition_penalty, min_length
     # encode prompt
     #if TF:
     #    input_ids = tokenizer.encode(input_prompt, return_tensors='tf')
     #else:
-    input_ids = tokenizer(input_prompt, return_tensors="pt").input_ids
+    input_ids = tokenizer(input_prompt, return_tensors="pt",
+                          max_length=max_input_length, truncation=True, padding=True).input_ids
     # predict
     if decode_method == 'greedy':
         # greedy
@@ -103,10 +104,11 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         model_paths = [model_path]
     else:
         # TF = False
-        model_names = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
-        model_paths = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B', 'EleutherAI/gpt-neo-2.7B']
+        model_names = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B']
+        model_paths = ['gpt2', 'gpt2-medium', 'EleutherAI/gpt-neo-1.3B']
 
     # Load the test data
+    max_input_length = training_args.eval_args.max_input_length
     dataset_name = training_args.data_args.dataset_name
     samples_dataset = datasets.load_dataset(dataset_name)['test']
     temperature = training_args.eval_args.temperature
@@ -154,6 +156,21 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         # )
         # print(tokenized_datasets.column_names)
 
+        # model_name = 'gpt2'
+        # dataset_name = training_args.data_args.dataset_name
+        # samples_dataset = datasets.load_dataset(dataset_name)['test']
+        # tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        #
+        # data = [data[0] for data in samples_dataset['data']]
+        # tokenized_data = tokenizer(data)
+        # model = GPT2LMHeadModel.from_pretrained(model_name)
+        # data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
+        # colladed_data = data_collator(data)
+        # print(colladed_data['input_ids'].shape)
+        #
+        #
+        # print("Generating prompts...")
+
         for index, (lyrics, meaning, artist, title) in \
                 tqdm(enumerate(zip(samples['data'], samples['labels'], samples['artist'], samples['title']))):
 
@@ -174,7 +191,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
                 for decode_method in decode_methods:
                     outputs = decode_fn(model=model, tokenizer=tokenizer, input_prompt=input_prompt,
                                         decode_method=decode_method, temperature=temperature,
-                                        num_return_sequences=num_return_sequences)
+                                        num_return_sequences=num_return_sequences, max_input_length=max_input_length)
 
                     # decode
                     pred_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
@@ -252,10 +269,17 @@ if __name__ == '__main__':
     elif curr_state == "train":
         print("preparing args for training...")
         # Run the mode
-        model_type = 'gpt2-medium'
-        model_name_or_path = 'gpt2-medium'
-        model_path = "checkpoint_{}_{}_{}".format(model_type, prompt_type,
+        model_type = training_args.train_args.model_name
+        model_name_or_path = model_type
+        gradient_accumulation_steps = training_args.train_args.gradient_accumulation_steps
+        model_path = "checkpoint_{}_bs_{}_{}".format(prompt_type, gradient_accumulation_steps,
                                                   datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        # Save details for future use to models.txt file (if not exist, create it)
+        if not os.path.exists(os.path.join(main_path, "models.txt")):
+            with open(os.path.join(main_path, "models.txt"), "w") as f:
+                f.write("model_name: {}, model_path: {}, prompt_type: {}"
+                        "\n".format(model_type, model_path, prompt_type))
+
         # Set model_path for evaluation after training
         set_specific_config("private_config.yaml", "path", "model_path", model_path)
         train_file = os.path.join(main_path, training_args.path_args.data_for_finetuning_path,
@@ -266,7 +290,6 @@ if __name__ == '__main__':
         batch_size = training_args.train_args.batch_size
         num_train_epochs = training_args.train_args.num_train_epochs
         training_script = os.path.join(main_path, 'transformers/examples/pytorch/language-modeling/run_clm.py')
-        gradient_accumulation_steps = training_args.train_args.gradient_accumulation_steps
         eval_steps = training_args.train_args.eval_steps
         logging_steps = eval_steps
         train_command = "nohup python {} --model_type {} --model_name_or_path {} --train_file {} --do_train " \
@@ -294,6 +317,10 @@ if __name__ == '__main__':
         file_name = "predictions_after_training"
         file_path = os.path.join(main_path, results_path, after_training_folder, file_name)
         number_of_samples = training_args.eval_args.num_samples
+        prompt_type = training_args.prompt_args.prompt_type
+        print("Model: {}".format(model_name))
+        print("Model path: {}".format(model_path))
+        print("Prompt type: {}".format(prompt_type))
         evaluate_model_on_test_data(model_name, model_path, file_path, number_of_samples=number_of_samples,
                                     after_training=True)
 
@@ -305,5 +332,54 @@ if __name__ == '__main__':
         pretraining_folder = training_args.path_args.pretraining_folder
         file_name = "predictions_before_training"
         file_path = os.path.join(main_path, results_path, pretraining_folder, file_name)
-        evaluate_model_on_test_data("", "", file_path, number_of_samples=number_of_samples,
+        evaluate_model_on_test_data("", "", file_path, number_of_samples=1,
                                     after_training=False)
+
+
+#####
+# from itertools import chain
+# block_size = 1024
+#
+#
+# model_name = 'gpt2'
+# dataset_name = training_args.data_args.dataset_name
+# raw_datasets = datasets.load_dataset(dataset_name)['test']
+# tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+#
+# def group_texts(examples):
+#     # Concatenate all texts.
+#     concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
+#     total_length = len(concatenated_examples[list(examples.keys())[0]])
+#     # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
+#     # customize this part to your needs.
+#     if total_length >= block_size:
+#         total_length = (total_length // block_size) * block_size
+#     # Split by chunks of max_len.
+#     result = {
+#         k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
+#         for k, t in concatenated_examples.items()
+#     }
+#     result["labels"] = result["input_ids"].copy()
+#     return result
+#
+# def tokenize_function(examples):
+#     data = [d[0] for d in examples['data']]
+#     output = tokenizer(data)
+#     # clm input could be much much longer than block_size
+#     return output
+#
+#
+# tokenized_datasets = raw_datasets.map(
+#     tokenize_function,
+#     batched=True,
+#     desc="Running tokenizer on dataset",
+# )
+#
+#
+# lm_datasets = tokenized_datasets.map(
+#     group_texts,
+#     batched=True,
+#     desc=f"Grouping texts in chunks of {block_size}",
+# )
+#
+# print(lm_datasets)

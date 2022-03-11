@@ -3,8 +3,8 @@ import sys
 
 f = open("config.yaml")
 y = yaml.safe_load(f)
-section = "train_args" # default section
 for i in range(1, len(sys.argv)):
+    section = "train_args"  # default section
     var, val = sys.argv[i].split("=")
     var_splitted = var.split('!')
     if len(var_splitted) == 2:
