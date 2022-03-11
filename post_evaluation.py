@@ -19,7 +19,11 @@ from config_parser import *
 
 def calc_rouge(sen_a, sen_b):
     rouge = datasets.load_metric('rouge')
-    rouge_score = rouge.compute(predictions=sen_a, references=sen_b)
+    # match in the number of len prediction and len reference :len(sen_b)
+    if len(sen_a) >= len(sen_b):
+        rouge_score = rouge.compute(predictions=sen_a[:len(sen_b)], references=sen_b)
+    else:
+        rouge_score = rouge.compute(predictions=sen_a, references=sen_b[:len(sen_a)])
     # low, mid, high -  """Tuple containing confidence intervals for scores."""
     precentile = 1  # 'mid'
     score_type = 2  # 'fmeasure'  # recall, precision
@@ -89,18 +93,19 @@ def fix_columns(df):
     return df
 
 
-def post_eval(pickle_path):
+def post_eval(pickle_path, fix_flag=0):
     # Load pickle as a dataframe
     df = pd.read_pickle(pickle_path)
     pickle_name = os.path.split(pickle_path)[1]
-    # todo: remove when fine
-    df = fix_columns(df)
+
+    if fix_flag:
+        df = fix_columns(df)
 
     # calculate eval_metrices - (input, prediction), (label, prediction)
     cos_pred_lyrics_l, cos_pred_label_l, rouge1_l, rouge2_l = [], [], [], []
     total_score_l = []
     weights_per_metric = {'cos_pred_lyrics': 0.25, 'cos_pred_label': 0.25, 'rouge1': 0.25, 'rouge2': 0.25}
-    for lyrics, pred, label in zip(df['lyrics'], df['predicted_meaning'], df['gt_meaning']):
+    for lyrics, pred, label in tqdm(zip(df['lyrics'], df['predicted_meaning'], df['gt_meaning'])):
         # cosine similarity - LSA
         cos_pred_lyrics = calc_cosine_similarity_2_sentences(pred, lyrics)
         cos_pred_label = calc_cosine_similarity_2_sentences(pred, label)
@@ -152,7 +157,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
         print('Mean:\n', mean_gk)
         # sys.stdout.close()
 
-        print('done')
+    print('done')
 
 
 
