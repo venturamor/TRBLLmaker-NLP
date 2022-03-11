@@ -89,18 +89,11 @@ def fix_columns(df):
     return df
 
 
-def post_eval():
-    # path to evaluate pickle
-    before_folder = 'before_training'
-    after_folder = 'after_training'
-    results_folder = config_args['path_args']['results_path']
-
-    pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
+def post_eval(pickle_path):
     # Load pickle as a dataframe
-    pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
-    df = pd.read_pickle(os.path.join(pickles_folder, pickle_name))
-
-    # todo: remove
+    df = pd.read_pickle(pickle_path)
+    pickle_name = os.path.split(pickle_path)[1]
+    # todo: remove when fine
     df = fix_columns(df)
 
     # calculate eval_metrices - (input, prediction), (label, prediction)
@@ -131,23 +124,21 @@ def post_eval():
     df['cos_pred_label'] = cos_pred_label_l
     df['cos_pred_lyrics'] = cos_pred_lyrics_l
     df['total_score'] = total_score_l
-    df.to_pickle("./example_to_analysis.pkl")
+    new_pickle_path = "./example_to_analysis_" + pickle_name + ".pkl"
+    df.to_pickle(new_pickle_path)
     print('done')
-    return df
+    return df, new_pickle_path
 
 
-def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_name: str):
+def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_name: str, new_pickle_path):
     """
 
     :param df:
     :param compare_param: list of strings - order - hirrechy - column - model, prompt, decode, any other...
     :return:
     """
-    df = pd.read_pickle("./example_to_analysis.pkl") #TODO: remove
+    df = pd.read_pickle(new_pickle_path) #TODO: remove
     # df_analysis = pd.DataFrame()
-
-    compare_params = ['model', 'prompt_type', 'decode_method']#TODO: remove
-    score_name = 'total_score' #TODO: remove
 
     h = len(compare_params)  # hierarchies
     for ind_param in range(h):
@@ -161,6 +152,8 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
         print('Mean:\n', mean_gk)
         # sys.stdout.close()
 
+        print('done')
+
 
 
 
@@ -168,16 +161,19 @@ if __name__ == '__main__':
     # path to evaluate pickle
     before_folder = 'before_training'
     after_folder = 'after_training'
-    results_folder = config_args['path_args']['results_path']
+    results_folder = config_args.path_args.results_path
 
     pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
     # Load pickle as a dataframe
-    pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
-    df = pd.read_pickle(os.path.join(pickles_folder, pickle_name))
+    # pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
+    pickle_name = 'predictions_before_training_2022-03-10-12-26-46.pkl'
+    pickle_path = os.path.join(pickles_folder, pickle_name)
+    # df = pd.read_pickle(pickle_path)
 
-    df = post_eval()
+    df, new_pickle_path = post_eval(pickle_path)
     compare_params = ['model', 'prompt_type', 'decode_method']
     score_name = 'total_score'
+    analysis(df, compare_params, score_name, pickle_name, new_pickle_path)
 
 # #---------------------------------------------------------------
 # # create a doc file to write the generated prompts

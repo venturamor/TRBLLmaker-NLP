@@ -9,7 +9,7 @@ parser.add_argument('--config', default='config.yaml', type=str,
 args = parser.parse_args()
 with open(args.config, encoding="utf8") as f:
     global config_args
-    config_args = yaml.load(f, Loader=yaml.FullLoader)
+    config_args = Box(yaml.load(f, Loader=yaml.FullLoader))
 
 with open('config.yaml') as f:
     global training_args
