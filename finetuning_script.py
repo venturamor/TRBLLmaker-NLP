@@ -135,6 +135,10 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         print("Run for each model.\nCurrent model: {}".format(model_name))
         #  Load tokenizer
         tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        # when generating, we will use the logits of right-most token to predict the next token
+        # so the padding should be on the left
+        tokenizer.padding_side = "left"
+        tokenizer.pad_token = tokenizer.eos_token  # to avoid an error
         # Load the model
         if model_name == 'gpt2' or model_name =='gpt2-medium':
             #if TF:
