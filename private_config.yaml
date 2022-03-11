@@ -1,11 +1,12 @@
-# Michael
+# Mor
 wandb_args:
-  entity: 'tokeron'
+  entity: 'morventura'
   project_name: "TRBLL_maker"
 
 path:
-  main_path: /home/tok/TRBLLmaker # path to main folder '/home/student/michael_nlp'
-  model_path: checkpoint_2022-03-10-14-14-47
+  main_path: '/home/mor.ventura/trbll_maker' #'/home/student/mor_nlp' # path to main folder /home/tok/TRBLL_maker
+  model_path: 'checkpoints'
+
 
 #name:
 #  train_name: 'train_tmp'

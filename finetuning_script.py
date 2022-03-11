@@ -387,3 +387,19 @@ if __name__ == '__main__':
 # )
 #
 # print(lm_datasets)
+
+# Run the script - training
+#  python /home/student/mor_nlp/transformers/examples/pytorch/language-modeling/run_clm.py \
+#  --model_type gpt2 \
+#  --model_name_or_path gpt2 \
+#  --train_file "/home/student/mor_nlp/data/tmp/train_tmp.txt" \
+#  --do_train \
+#  --validation_file "/home/student/mor_nlp/data/tmp/eval_tmp.txt" \
+#  --do_eval \
+#  --per_gpu_train_batch_size 1 \
+#  --save_steps -1 \
+#  --num_train_epochs 4 \
+#  --fp16 \
+#  --output_dir="/home/student/mor_nlp/checkpoints3" \
+#  --overwrite_output_dir
+
