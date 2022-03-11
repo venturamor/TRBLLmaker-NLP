@@ -1,7 +1,6 @@
 #!/bin/bash
-python set_config.py state_int=0 data_args!mini_int=0 prompt_args!prompt_type=lyrics_meaning_with_metadata \
-num_train_epochs_int=4 model_name=EleutherAI/gpt-neo-1.3B
-python finetuning_script.py
+python set_config.py state_int=0 data_args!take_mini_int=0 prompt_args!prompt_type=lyrics_meaning_with_metadata \
+num_train_epochs_int=4 model_name=gpt2
 python set_config.py state_int=1
 python finetuning_script.py
 python set_config.py state_int=2
