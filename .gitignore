@@ -137,8 +137,4 @@ config.yaml
 *.zip
 transformers/
 private_config.yaml
-private_config.yaml
-private_config.yaml
-private_config.yaml
-private_config.yaml
-private_config.yaml
+*.yaml

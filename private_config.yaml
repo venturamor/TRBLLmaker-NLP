@@ -4,8 +4,8 @@ wandb_args:
   project_name: "TRBLL_maker"
 
 path:
-  main_path: '/home/mor.ventura/trbll_maker' #'/home/student/mor_nlp' # path to main folder /home/tok/TRBLL_maker
-  model_path: 'checkpoints'
+  main_path: '/home/tok/TRBLLmaker' #'/home/student/mor_nlp' # path to main folder /home/tok/TRBLL_maker
+  model_path: 'checkpoint_question_context_with_metadata_bs_32_2022-03-11-11-33-14'
 
 
 #name:
