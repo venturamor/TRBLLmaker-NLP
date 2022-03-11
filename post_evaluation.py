@@ -171,7 +171,7 @@ if __name__ == '__main__':
     pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
     # Load pickle as a dataframe
     # pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
-    pickle_name = 'predictions_before_training_2022-03-11-13-31-27.pkl'
+    pickle_name = 'predictions_before_training_2022-03-11-16-41-20.pkl'
     pickle_path = os.path.join(pickles_folder, pickle_name)
     # df = pd.read_pickle(pickle_path)
 

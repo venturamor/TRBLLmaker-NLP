@@ -1,6 +1,3 @@
-"""
-Now load the data line by line
-"""
 import numpy as np
 from sklearn.model_selection import train_test_split
 import pandas as pd
@@ -119,7 +116,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
     np.random.seed(21)
 
     # take only a subset of the test data
-    all_test_data, samples = train_test_split(samples_dataset, test_size=1, random_state=5)
+    all_test_data, samples = train_test_split(samples_dataset, test_size=num_return_sequences, random_state=9455)
 
     # create a doc file to write the generated prompts
     doc = docx.Document()
@@ -140,40 +137,11 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         tokenizer.padding_side = "left"
         tokenizer.pad_token = tokenizer.eos_token  # to avoid an error
         # Load the model
+        print("Loading model from {}".format(model_path))
         if model_name == 'gpt2' or model_name =='gpt2-medium':
-            #if TF:
-            #    model = TFGPT2LMHeadModel.from_pretrained(model_path, from_pt=True)
-            #else:
             model = GPT2LMHeadModel.from_pretrained(model_path)
         else:
             model = GPTNeoForCausalLM.from_pretrained(model_path)
-
-        # def preprocess_function(samples):
-        #     output = tokenizer(samples["data"])
-        #     return output
-        #
-        # # Run for each sample
-        # tokenized_datasets = samples_dataset.map(
-        #     preprocess_function,
-        #     batched=True,
-        #     remove_columns=samples_dataset.column_names,
-        # )
-        # print(tokenized_datasets.column_names)
-
-        # model_name = 'gpt2'
-        # dataset_name = training_args.data_args.dataset_name
-        # samples_dataset = datasets.load_dataset(dataset_name)['test']
-        # tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-        #
-        # data = [data[0] for data in samples_dataset['data']]
-        # tokenized_data = tokenizer(data)
-        # model = GPT2LMHeadModel.from_pretrained(model_name)
-        # data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
-        # colladed_data = data_collator(data)
-        # print(colladed_data['input_ids'].shape)
-        #
-        #
-        # print("Generating prompts...")
 
         for index, (lyrics, meaning, artist, title) in \
                 tqdm(enumerate(zip(samples['data'], samples['labels'], samples['artist'], samples['title']))):
@@ -336,70 +304,6 @@ if __name__ == '__main__':
         pretraining_folder = training_args.path_args.pretraining_folder
         file_name = "predictions_before_training"
         file_path = os.path.join(main_path, results_path, pretraining_folder, file_name)
-        evaluate_model_on_test_data("", "", file_path, number_of_samples=1,
+        evaluate_model_on_test_data("", "", file_path, number_of_samples=number_of_samples,
                                     after_training=False)
-
-
-#####
-# from itertools import chain
-# block_size = 1024
-#
-#
-# model_name = 'gpt2'
-# dataset_name = training_args.data_args.dataset_name
-# raw_datasets = datasets.load_dataset(dataset_name)['test']
-# tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-#
-# def group_texts(examples):
-#     # Concatenate all texts.
-#     concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
-#     total_length = len(concatenated_examples[list(examples.keys())[0]])
-#     # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
-#     # customize this part to your needs.
-#     if total_length >= block_size:
-#         total_length = (total_length // block_size) * block_size
-#     # Split by chunks of max_len.
-#     result = {
-#         k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
-#         for k, t in concatenated_examples.items()
-#     }
-#     result["labels"] = result["input_ids"].copy()
-#     return result
-#
-# def tokenize_function(examples):
-#     data = [d[0] for d in examples['data']]
-#     output = tokenizer(data)
-#     # clm input could be much much longer than block_size
-#     return output
-#
-#
-# tokenized_datasets = raw_datasets.map(
-#     tokenize_function,
-#     batched=True,
-#     desc="Running tokenizer on dataset",
-# )
-#
-#
-# lm_datasets = tokenized_datasets.map(
-#     group_texts,
-#     batched=True,
-#     desc=f"Grouping texts in chunks of {block_size}",
-# )
-#
-# print(lm_datasets)
-
-# Run the script - training
-#  python /home/student/mor_nlp/transformers/examples/pytorch/language-modeling/run_clm.py \
-#  --model_type gpt2 \
-#  --model_name_or_path gpt2 \
-#  --train_file "/home/student/mor_nlp/data/tmp/train_tmp.txt" \
-#  --do_train \
-#  --validation_file "/home/student/mor_nlp/data/tmp/eval_tmp.txt" \
-#  --do_eval \
-#  --per_gpu_train_batch_size 1 \
-#  --save_steps -1 \
-#  --num_train_epochs 4 \
-#  --fp16 \
-#  --output_dir="/home/student/mor_nlp/checkpoints3" \
-#  --overwrite_output_dir
 

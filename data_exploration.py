@@ -19,8 +19,8 @@ def explore_data():
         training_args = Box(yaml.load(f, Loader=yaml.FullLoader))
 
     # Load data
-    samples = pd.read_json('../jsons/samples_cleaned.json')
-    songs = pd.read_json('../jsons/songs_cleaned.json')
+    samples = pd.read_json('jsons/samples_final.json')
+    songs = pd.read_json('jsons/songs_final.json')
 
     # Calculate statistics
     lyrics_length = []
@@ -37,51 +37,51 @@ def explore_data():
         annotation_length.append(len(annotation.split()))
 
 
-    # # #  Prepare data for wordcloud
-    # lyrics_words = ''
-    # annotation_words = ''
-    # stopwords = set(STOPWORDS)
-    # # iterate data
-    # for index, sampleTuple in enumerate(samples.itertuples()):
-    #     lyrics = sampleTuple.text.split()
-    #     annotation = sampleTuple.annotation.split()
-    #     for word in lyrics:
-    #         if word not in stopwords and len(word) > 2:
-    #             lyrics_words += ' ' + word.lower() + ' '
-    #     for word in annotation:
-    #         if word not in stopwords and len(word) > 2:
-    #                 annotation_words += ' ' + word.lower() + ' '
-    #     if index % 1000 == 0:
-    #         print(index)
-    #     if index == 10000:
-    #         break
-    #
-    #
-    #
-    # wordcloud = WordCloud(width=800, height=800,
-    #                       background_color='white',
-    #                       stopwords=stopwords,
-    #                       min_font_size=10).generate(lyrics_words)
-    #
-    # # plot the WordCloud image
-    # plt.figure(figsize=(8, 8), facecolor=None)
-    # plt.imshow(wordcloud)
-    # plt.axis("off")
-    # plt.tight_layout(pad=0)
-    # plt.show()
-    #
-    #
-    # wordcloud = WordCloud(width=800, height=800,
-    #                       background_color='white',
-    #                       stopwords=stopwords,
-    #                       min_font_size=10).generate(annotation_words)
-    #
-    # # plot the WordCloud image
-    # plt.figure(figsize=(8, 8), facecolor=None)
-    # plt.imshow(wordcloud)
-    # plt.axis("off")
-    # plt.tight_layout(pad=0)
-    # plt.show()
+    # #  Prepare data for wordcloud
+    lyrics_words = ''
+    annotation_words = ''
+    stopwords = set(STOPWORDS)
+    # iterate data
+    for index, sampleTuple in enumerate(samples.itertuples()):
+        lyrics = sampleTuple.text.split()
+        annotation = sampleTuple.annotation.split()
+        for word in lyrics:
+            if word not in stopwords and len(word) > 2:
+                lyrics_words += ' ' + word.lower() + ' '
+        for word in annotation:
+            if word not in stopwords and len(word) > 2:
+                    annotation_words += ' ' + word.lower() + ' '
+        if index % 1000 == 0:
+            print(index)
+
+    wordcloud = WordCloud(width=800, height=800,
+                          background_color='white',
+                          stopwords=stopwords,
+                          min_font_size=10).generate(lyrics_words)
+
+    # plot the WordCloud image
+    plt.figure(figsize=(8, 8), facecolor=None)
+    plt.imshow(wordcloud)
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.show()
+    # save
+    wordcloud.to_file('lyrics_wordcloud.png')
+
+
+    wordcloud = WordCloud(width=800, height=800,
+                          background_color='white',
+                          stopwords=stopwords,
+                          min_font_size=10).generate(annotation_words)
+
+    # plot the WordCloud image
+    plt.figure(figsize=(8, 8), facecolor=None)
+    plt.imshow(wordcloud)
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.show()
+    # save
+    wordcloud.to_file('annotation_wordcloud.png')
 
     # Plot statistics
     # Genre distribution
