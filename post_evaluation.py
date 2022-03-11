@@ -19,6 +19,8 @@ from config_parser import *
 
 def calc_rouge(sen_a, sen_b):
     rouge = datasets.load_metric('rouge')
+
+    # fix mismatch by length by cut:
     # match in the number of len prediction and len reference :len(sen_b)
     if len(sen_a) >= len(sen_b):
         rouge_score = rouge.compute(predictions=sen_a[:len(sen_b)], references=sen_b)
@@ -104,7 +106,7 @@ def post_eval(pickle_path, fix_flag=0):
     # calculate eval_metrices - (input, prediction), (label, prediction)
     cos_pred_lyrics_l, cos_pred_label_l, rouge1_l, rouge2_l = [], [], [], []
     total_score_l = []
-    weights_per_metric = {'cos_pred_lyrics': 0.25, 'cos_pred_label': 0.25, 'rouge1': 0.25, 'rouge2': 0.25}
+    weights_per_metric = {'cos_pred_lyrics': 0.33, 'cos_pred_label': 0.33, 'rouge1': 0.33, 'rouge2': 0}
     for lyrics, pred, label in tqdm(zip(df['lyrics'], df['predicted_meaning'], df['gt_meaning'])):
         # cosine similarity - LSA
         cos_pred_lyrics = calc_cosine_similarity_2_sentences(pred, lyrics)
@@ -135,7 +137,7 @@ def post_eval(pickle_path, fix_flag=0):
     return df, new_pickle_path
 
 
-def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_name: str, new_pickle_path):
+def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_name: str, new_pickle_path, run_all=1):
     """
 
     :param df:
@@ -145,21 +147,31 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
     df = pd.read_pickle(new_pickle_path) #TODO: remove
     # df_analysis = pd.DataFrame()
 
-    h = len(compare_params)  # hierarchies
-    for ind_param in range(h):
-        gk = df.groupby(compare_params[:ind_param+1])
-        mean_gk = gk[score_name].mean()
-        median_gk = gk[score_name].median()
-        # todo: create docx - fix
-        # txt_file_name = "analysis_" + pickle_name + datetime.datetime.today().strftime('%d%m%y_%H%M')
-        # sys.stdout = open(txt_file_name, "a")
-        print('Median:\n', median_gk)
-        print('Mean:\n', mean_gk)
-        # sys.stdout.close()
+    if run_all:
+        compare_params_lists = [['model', 'prompt_type', 'decode_method'],
+                                ['prompt_type', 'model',  'decode_method'],
+                                ['decode_method', 'model', 'prompt_type']]
+        score_name_list = ['total_score', 'rouge1', 'cos_pred_label', 'cos_pred_lyrics']
+
+        for compare_list in compare_params_lists:
+            for score in score_name_list:
+                print('Compare_list:', compare_list, '\nMean score by:', score)
+                h = len(compare_list)  # hierarchies
+                for ind_param in range(h):
+                    gk = df.groupby(compare_list[:ind_param + 1])
+                    mean_gk = gk[score].mean()
+                    # txt_file_name = "analysis_" + pickle_name + datetime.datetime.today().strftime('%d%m%y_%H%M')
+                    print('Mean Hierarchy {}:\n'.format(ind_param), mean_gk)
+
+    else:
+        h = len(compare_params)  # hierarchies
+        for ind_param in range(h):
+            gk = df.groupby(compare_params[:ind_param+1])
+            mean_gk = gk[score_name].mean()
+            # txt_file_name = "analysis_" + pickle_name + datetime.datetime.today().strftime('%d%m%y_%H%M')
+            print('Mean:\n', mean_gk)
 
     print('done')
-
-
 
 
 if __name__ == '__main__':
@@ -172,7 +184,8 @@ if __name__ == '__main__':
     # Load pickle as a dataframe
     # pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
     # pickle_name = 'predictions_before_training_2022-03-10-12-26-46.pkl'
-    pickle_name = 'predictions_before_training_2022-03-11-13-31-27.pkl'
+    # pickle_name = 'predictions_before_training_2022-03-11-13-31-27.pkl'
+    pickle_name = 'predictions_before_training_2022-03-11-16-41-20.pkl'
     pickle_path = os.path.join(pickles_folder, pickle_name)
     # df = pd.read_pickle(pickle_path)
 
