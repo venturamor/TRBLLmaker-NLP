@@ -298,8 +298,8 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
         # get only clean meaning
         predicted_meaning_list = []
-        for pred in pred_text_list:
-            pred_splitted = pred.split(lists_to_create['input_list'])
+        for pred, input_ in zip(pred_text_list, lists_to_create['input_list']):
+            pred_splitted = pred.split(input_)
             if len(pred_splitted) <= 1:
                 pred = "Empty"
             elif len(pred_splitted) == 2:
@@ -319,7 +319,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
                                 'prompt_type': lists_to_create['prompt_types_list_'],
                                 'gt_meaning': lists_to_create['gt_meaning_list'],
                                 'lyrics': lists_to_create['lyrics_list'],
-                                'artist': lists_to_create['artist'],
+                                'artist': lists_to_create['artist_list'],
                                 'title': lists_to_create['title_list']
                                 })
         df_inference = pd.concat([df_inference, df_curr], ignore_index=True)

@@ -19,13 +19,16 @@ from config_parser import *
 
 def calc_rouge(sen_a, sen_b):
     rouge = datasets.load_metric('rouge')
-
-    # fix mismatch by length by cut:
-    # match in the number of len prediction and len reference :len(sen_b)
-    if len(sen_a) >= len(sen_b):
-        rouge_score = rouge.compute(predictions=sen_a[:len(sen_b)], references=sen_b)
+    # if one of the sentences is empty, return 0
+    if sen_a == "" or sen_b == "":
+        rouge_score = rouge.compute(predictions="1", references="0")
     else:
-        rouge_score = rouge.compute(predictions=sen_a, references=sen_b[:len(sen_a)])
+        # fix mismatch by length by cut:
+        # match in the number of len prediction and len reference :len(sen_b)
+        if len(sen_a) >= len(sen_b):
+            rouge_score = rouge.compute(predictions=sen_a[:len(sen_b)], references=sen_b)
+        else:
+            rouge_score = rouge.compute(predictions=sen_a, references=sen_b[:len(sen_a)])
     # low, mid, high -  """Tuple containing confidence intervals for scores."""
     precentile = 1  # 'mid'
     score_type = 2  # 'fmeasure'  # recall, precision
@@ -69,7 +72,11 @@ def calc_cosine_similarity_2_sentences(sen_a, sen_b):
     # cosine formula
     for i in range(len(rvector)):
         c += l1[i] * l2[i]
-    cosine = c / float((sum(l1) * sum(l2)) ** 0.5)
+
+    try:
+        cosine = c / float((sum(l1) * sum(l2)) ** 0.5)
+    except:
+        cosine = 0
     return cosine
 
 
@@ -145,7 +152,11 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
     :return:
     """
     df = pd.read_pickle(new_pickle_path) #TODO: remove
-    # df_analysis = pd.DataFrame()
+    df_analysis = pd.DataFrame()
+
+    # creat docx file
+    doc = docx.Document()
+    doc.add_heading('Analysis', 0)
 
     if run_all:
         compare_params_lists = [['model', 'prompt_type', 'decode_method'],
@@ -155,12 +166,28 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
 
         for compare_list in compare_params_lists:
             for score in score_name_list:
+                para = doc.add_paragraph('Compare_list: \n{}\nMean score by:{}'.format(compare_list, score))
                 print('Compare_list:', compare_list, '\nMean score by:', score)
                 h = len(compare_list)  # hierarchies
                 for ind_param in range(h):
                     gk = df.groupby(compare_list[:ind_param + 1])
                     mean_gk = gk[score].mean()
-                    # txt_file_name = "analysis_" + pickle_name + datetime.datetime.today().strftime('%d%m%y_%H%M')
+                    # save as df
+                    mean_gk_df = mean_gk.to_frame()
+
+                    # concat to analysis df
+                    df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
+
+                    # save pickle
+                    mean_gk_df.to_pickle('post_eval/analysis_{}_{}_{}.pkl'.format(score, compare_list,
+                                                                                  datetime.datetime.now()))
+
+
+                    # append to docx
+                    para.add_run('Mean Hierarchy \n{}:\n'.format(ind_param))
+                    para.add_run('Mean:\n{}\n'.format(mean_gk))
+                    para.add_run('\n')
+
                     print('Mean Hierarchy {}:\n'.format(ind_param), mean_gk)
 
     else:
@@ -168,8 +195,31 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
         for ind_param in range(h):
             gk = df.groupby(compare_params[:ind_param+1])
             mean_gk = gk[score_name].mean()
-            # txt_file_name = "analysis_" + pickle_name + datetime.datetime.today().strftime('%d%m%y_%H%M')
+            # save as df
+            mean_gk_df = mean_gk.to_frame()
+
+            # concat to analysis df
+            df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
+
+            # save pickle
+            mean_gk_df.to_pickle('post_eval/analysis_{}_{}_{}.pkl'.format(score_name, compare_params,
+                                                                          datetime.datetime.now()))
+
+            # append to docx
+            doc.add_paragraph('Mean:\n{}\n'.format(mean_gk))
+
             print('Mean:\n', mean_gk)
+
+    # save the docx file
+    doc.save('post_eval/analysis_{}.docx'.format(datetime.datetime.today().strftime('%d%m%y_%H%M')))
+
+    # save pickle
+    df_analysis.to_pickle('post_eval/full_analysis_{}.pkl'.format(datetime.datetime.today().strftime('%d%m%y_%H%M')))
+
+    # save as csv
+    df_analysis.to_csv('post_eval/full_analysis_{}.csv'.format(datetime.datetime.today().strftime('%d%m%y_%H%M')))
+
+
 
     print('done')
 
@@ -178,14 +228,15 @@ if __name__ == '__main__':
     # path to evaluate pickle
     before_folder = training_args.path_args.pretraining_folder #'before_training'
     after_folder = training_args.path_args.after_training_folder #'after_training'
-    results_folder = config_args.path_args.results_path
+    results_folder = training_args.path_args.results_path
 
     pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
     # Load pickle as a dataframe
     # pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
     # pickle_name = 'predictions_before_training_2022-03-10-12-26-46.pkl'
     # pickle_name = 'predictions_before_training_2022-03-11-13-31-27.pkl'
-    pickle_name = 'predictions_before_training_2022-03-11-16-41-20.pkl'
+    # pickle_name = 'predictions_before_training_2022-03-11-16-41-20.pkl'
+    pickle_name = 'predictions_before_training_2022-03-12-17-41-00.pkl'
     pickle_path = os.path.join(pickles_folder, pickle_name)
     # df = pd.read_pickle(pickle_path)
 
