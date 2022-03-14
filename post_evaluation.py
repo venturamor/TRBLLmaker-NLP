@@ -113,7 +113,7 @@ def post_eval(pickle_path, fix_flag=0):
     # calculate eval_metrices - (input, prediction), (label, prediction)
     cos_pred_lyrics_l, cos_pred_label_l, rouge1_l, rouge2_l = [], [], [], []
     total_score_l = []
-    weights_per_metric = {'cos_pred_lyrics': 0.33, 'cos_pred_label': 0.33, 'rouge1': 0.33, 'rouge2': 0}
+    weights_per_metric = {'cos_pred_lyrics': 0.5, 'cos_pred_label': 0.5, 'rouge1': 0.5, 'rouge2': 0}
     for lyrics, pred, label in tqdm(zip(df['lyrics'], df['predicted_meaning'], df['gt_meaning'])):
         # cosine similarity - LSA
         cos_pred_lyrics = calc_cosine_similarity_2_sentences(pred, lyrics)
@@ -124,7 +124,7 @@ def post_eval(pickle_path, fix_flag=0):
         scores = {'cos_pred_lyrics': cos_pred_lyrics, 'cos_pred_label': cos_pred_label, 'rouge1': rouge1,
                   'rouge2': rouge2}
         weighted_scores = [scores[k] * v for k, v in weights_per_metric.items()]
-        total_score = sum(weighted_scores) - 2 * weighted_scores[0]  # sum of all minus similarity to lyrics
+        total_score = max(0, sum(weighted_scores) - 2 * weighted_scores[0])  # sum of all minus similarity to lyrics
 
         # appends
         cos_pred_lyrics_l.append(cos_pred_lyrics)
@@ -172,6 +172,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
                 for ind_param in range(h):
                     gk = df.groupby(compare_list[:ind_param + 1])
                     mean_gk = gk[score].mean()
+                    # TODO: add std
                     # save as df
                     mean_gk_df = mean_gk.to_frame()
 
@@ -179,10 +180,8 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
                     df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
 
                     # save pickle
-                    mean_gk_df.to_pickle('post_eval/analysis_{}_{}_{}.pkl'.format(score, compare_list,
+                    mean_gk_df.to_pickle('post_eval/analysis_{}_{}_{}.pkl'.format(score, compare_list[:ind_param + 1],
                                                                                   datetime.datetime.now()))
-
-
                     # append to docx
                     para.add_run('Mean Hierarchy \n{}:\n'.format(ind_param))
                     para.add_run('Mean:\n{}\n'.format(mean_gk))
@@ -202,7 +201,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
             df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
 
             # save pickle
-            mean_gk_df.to_pickle('post_eval/analysis_{}_{}_{}.pkl'.format(score_name, compare_params,
+            mean_gk_df.to_pickle('post_eval/analysis_{}_{}_{}.pkl'.format(score_name, compare_params[:ind_param+1],
                                                                           datetime.datetime.now()))
 
             # append to docx
@@ -229,14 +228,19 @@ if __name__ == '__main__':
     before_folder = training_args.path_args.pretraining_folder #'before_training'
     after_folder = training_args.path_args.after_training_folder #'after_training'
     results_folder = training_args.path_args.results_path
-
-    pickles_folder = os.path.join(private_args.path.main_path, results_folder, before_folder)
     # Load pickle as a dataframe
     # pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
     # pickle_name = 'predictions_before_training_2022-03-10-12-26-46.pkl'
     # pickle_name = 'predictions_before_training_2022-03-11-13-31-27.pkl'
     # pickle_name = 'predictions_before_training_2022-03-11-16-41-20.pkl'
-    pickle_name = 'predictions_before_training_2022-03-12-17-41-00.pkl'
+    pickle_name = 'predictions_after_training_2022-03-14-11-17-57.pkl'
+    # if pickel name has 'before' in it, load before pickle
+    if 'before' in pickle_name:
+        folder = before_folder
+    else:
+        folder = after_folder
+    pickles_folder = os.path.join(private_args.path.main_path, results_folder, folder)
+
     pickle_path = os.path.join(pickles_folder, pickle_name)
     # df = pd.read_pickle(pickle_path)
 
@@ -244,6 +248,7 @@ if __name__ == '__main__':
     compare_params = ['model', 'prompt_type', 'decode_method']
     score_name = 'total_score'
     analysis(df, compare_params, score_name, pickle_name, new_pickle_path)
+
 
 # #---------------------------------------------------------------
 # # create a doc file to write the generated prompts

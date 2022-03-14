@@ -5,7 +5,7 @@ wandb_args:
 
 path:
   main_path: '/home/tok/TRBLLmaker' #'/home/student/mor_nlp' # path to main folder /home/tok/TRBLL_maker
-  model_path: 'checkpoint_song_with_metadata_bs_64_2022-03-11-14-25-07'
+  model_path: 'checkpoint_gpt2-medium_lyrics_meaning_with_metadata_2022-03-10-17-29-29'
 
 
 #name:

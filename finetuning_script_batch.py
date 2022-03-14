@@ -380,7 +380,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 
 if __name__ == '__main__':
     states = ["prepare_data", "train", "eval", "eval_pretrained"]
-    state = 3
+    state = 2
     # state = training_args.train_args.state
     curr_state = states[state]
     main_path = private_args.path.main_path
