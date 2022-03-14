@@ -144,13 +144,15 @@ def post_eval(pickle_path, fix_flag=0):
     return df, new_pickle_path
 
 
-def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_name: str, new_pickle_path, run_all=1):
+def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_name: str,
+             new_pickle_path, post_eval_path, run_all=1):
     """
 
     :param df:
     :param compare_param: list of strings - order - hirrechy - column - model, prompt, decode, any other...
     :return:
     """
+
     df = pd.read_pickle(new_pickle_path) #TODO: remove
     df_analysis = pd.DataFrame()
 
@@ -180,8 +182,10 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
                     df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
 
                     # save pickle
-                    mean_gk_df.to_pickle('post_eval/analysis_{}_{}_{}.pkl'.format(score, compare_list[:ind_param + 1],
-                                                                                  datetime.datetime.now()))
+                    curr_pickle_path = os.path.join(post_eval_path, 'analysis_{}_{}.pkl'.format(
+                        score_name, compare_params[:ind_param + 1]))
+                    mean_gk_df.to_pickle(curr_pickle_path)
+
                     # append to docx
                     para.add_run('Mean Hierarchy \n{}:\n'.format(ind_param))
                     para.add_run('Mean:\n{}\n'.format(mean_gk))
@@ -201,8 +205,9 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
             df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
 
             # save pickle
-            mean_gk_df.to_pickle('post_eval/analysis_{}_{}_{}.pkl'.format(score_name, compare_params[:ind_param+1],
-                                                                          datetime.datetime.now()))
+            curr_pickle_path = os.path.join(post_eval_path, 'analysis_{}_{}.pkl'.format(
+                score_name, compare_params[:ind_param+1]))
+            mean_gk_df.to_pickle(curr_pickle_path)
 
             # append to docx
             doc.add_paragraph('Mean:\n{}\n'.format(mean_gk))
@@ -210,29 +215,24 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
             print('Mean:\n', mean_gk)
 
     # save the docx file
-    doc.save('post_eval/analysis_{}.docx'.format(datetime.datetime.today().strftime('%d%m%y_%H%M')))
+    doc.save(os.path.join(post_eval_path, 'analysis_{}.docx'.format(score_name)))
 
     # save pickle
-    df_analysis.to_pickle('post_eval/full_analysis_{}.pkl'.format(datetime.datetime.today().strftime('%d%m%y_%H%M')))
+    df_analysis.to_pickle(os.path.join(post_eval_path, 'analysis_{}.pkl'.format(score_name)))
 
     # save as csv
-    df_analysis.to_csv('post_eval/full_analysis_{}.csv'.format(datetime.datetime.today().strftime('%d%m%y_%H%M')))
-
-
+    df_analysis.to_csv(os.path.join(post_eval_path, 'analysis_{}.csv'.format(score_name)))
 
     print('done')
 
 
 if __name__ == '__main__':
     # path to evaluate pickle
-    before_folder = training_args.path_args.pretraining_folder #'before_training'
-    after_folder = training_args.path_args.after_training_folder #'after_training'
+    before_folder = training_args.path_args.pretraining_folder
+    after_folder = training_args.path_args.after_training_folder
     results_folder = training_args.path_args.results_path
+
     # Load pickle as a dataframe
-    # pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
-    # pickle_name = 'predictions_before_training_2022-03-10-12-26-46.pkl'
-    # pickle_name = 'predictions_before_training_2022-03-11-13-31-27.pkl'
-    # pickle_name = 'predictions_before_training_2022-03-11-16-41-20.pkl'
     pickle_name = 'predictions_after_training_2022-03-14-11-17-57.pkl'
     # if pickel name has 'before' in it, load before pickle
     if 'before' in pickle_name:
@@ -241,13 +241,21 @@ if __name__ == '__main__':
         folder = after_folder
     pickles_folder = os.path.join(private_args.path.main_path, results_folder, folder)
 
+    curr_name = pickle_name.split('.')[0]
+    main_path = private_args.path.main_path
+    post_eval_path = os.path.join(main_path, 'post_eval', curr_name)
+
+    # if path does not exist, create it
+    if not os.path.exists(post_eval_path):
+        os.makedirs(post_eval_path)
+
     pickle_path = os.path.join(pickles_folder, pickle_name)
     # df = pd.read_pickle(pickle_path)
 
     df, new_pickle_path = post_eval(pickle_path)
     compare_params = ['model', 'prompt_type', 'decode_method']
     score_name = 'total_score'
-    analysis(df, compare_params, score_name, pickle_name, new_pickle_path)
+    analysis(df, compare_params, score_name, pickle_name, new_pickle_path, post_eval_path)
 
 
 # #---------------------------------------------------------------
