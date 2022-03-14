@@ -155,6 +155,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
 
     df = pd.read_pickle(new_pickle_path) #TODO: remove
     df_analysis = pd.DataFrame()
+    df_analysis_std = pd.DataFrame()
 
     # creat docx file
     doc = docx.Document()
@@ -174,17 +175,22 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
                 for ind_param in range(h):
                     gk = df.groupby(compare_list[:ind_param + 1])
                     mean_gk = gk[score].mean()
-                    # TODO: add std
+                    std_gk = gk[score].std()
                     # save as df
                     mean_gk_df = mean_gk.to_frame()
+                    # TODO: add std
+                    std_gk_df = std_gk.to_frame()
 
                     # concat to analysis df
                     df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
+                    df_analysis_std = pd.concat([df_analysis_std, std_gk_df], axis=1)
 
                     # save pickle
                     curr_pickle_path = os.path.join(post_eval_path, 'analysis_{}_{}.pkl'.format(
                         score_name, compare_params[:ind_param + 1]))
                     mean_gk_df.to_pickle(curr_pickle_path)
+
+                    std_gk_df.to_pickle(curr_pickle_path.replace('analysis', 'analysis_std'))
 
                     # append to docx
                     para.add_run('Mean Hierarchy \n{}:\n'.format(ind_param))
@@ -198,16 +204,22 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
         for ind_param in range(h):
             gk = df.groupby(compare_params[:ind_param+1])
             mean_gk = gk[score_name].mean()
+            std_gk = gk[score_name].std()
+
             # save as df
             mean_gk_df = mean_gk.to_frame()
+            std_gk_df = std_gk.to_frame()
 
             # concat to analysis df
             df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
+            df_analysis_std = pd.concat([df_analysis_std, std_gk_df], axis=1)
 
             # save pickle
             curr_pickle_path = os.path.join(post_eval_path, 'analysis_{}_{}.pkl'.format(
                 score_name, compare_params[:ind_param+1]))
             mean_gk_df.to_pickle(curr_pickle_path)
+
+            std_gk_df.to_pickle(curr_pickle_path.replace('analysis', 'analysis_std'))
 
             # append to docx
             doc.add_paragraph('Mean:\n{}\n'.format(mean_gk))
@@ -219,6 +231,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
 
     # save pickle
     df_analysis.to_pickle(os.path.join(post_eval_path, 'analysis_{}.pkl'.format(score_name)))
+    df_analysis_std.to_pickle(os.path.join(post_eval_path, 'analysis_std_{}.pkl'.format(score_name)))
 
     # save as csv
     df_analysis.to_csv(os.path.join(post_eval_path, 'analysis_{}.csv'.format(score_name)))
