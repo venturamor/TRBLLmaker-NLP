@@ -191,7 +191,10 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
                         score, compare_params[:ind_param + 1]))
                     mean_gk_df.to_pickle(curr_pickle_path)
 
-                    std_gk_df.to_pickle(curr_pickle_path.replace('analysis', 'analysis_std'))
+                    curr_std_pickle_path = os.path.join(post_eval_path, 'analysis_std_{}_{}.pkl'.format(
+                        score, compare_params[:ind_param + 1]))
+
+                    std_gk_df.to_pickle(curr_std_pickle_path)
 
                     # append to docx
                     para.add_run('Mean Hierarchy \n{}:\n'.format(ind_param))
@@ -220,8 +223,10 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
                 score_name, compare_params[:ind_param+1]))
             mean_gk_df.to_pickle(curr_pickle_path)
 
-            std_gk_df.to_pickle(curr_pickle_path.replace('analysis', 'analysis_std'))
+            curr_std_pickle_path = os.path.join(post_eval_path, 'analysis_std_{}_{}.pkl'.format(
+                score_name, compare_params[:ind_param + 1]))
 
+            std_gk_df.to_pickle(curr_std_pickle_path)
             # append to docx
             doc.add_paragraph('Mean:\n{}\n'.format(mean_gk))
 
@@ -241,8 +246,9 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
 
 
 if __name__ == '__main__':
-    states = ['eval_before_training', 'eval_after_training']
-    state = 1
+    state = 0  # [0 - 'eval_before_training', 1 - 'eval_after_training']
+    run_post_eval = False  # set True for regular running - post_eval + analysis
+
     # path to evaluate pickle
     before_folder = training_args.path_args.pretraining_folder
     after_folder = training_args.path_args.after_training_folder
@@ -256,19 +262,26 @@ if __name__ == '__main__':
         for folder in os.listdir(path_to_predictions):
             pickle_list.append(os.path.join(path_to_predictions, folder, 'inference_results.pkl'))
             pickle_names.append(folder)
-    else:
+    else: # state 0 - before
         path_to_predictions = private_args.path.path_to_predictions_before_training
         pickle_list.append(os.path.join(path_to_predictions, 'inference_results.pkl'))
         pickle_names.append('before_training')
     for pickle_path, curr_name in zip(pickle_list, pickle_names):
         main_path = private_args.path.main_path
-        post_eval_path = os.path.join(main_path, 'post_eval', curr_name)
-
+        post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name)
         # if path does not exist, create it
         if not os.path.exists(post_eval_path):
             os.makedirs(post_eval_path)
 
-        df, new_pickle_path = post_eval(pickle_path)
+        # to run analysis only - please fill new_pickle path!!!!
+        if run_post_eval:
+            df, new_pickle_path = post_eval(pickle_path)
+        else:
+            new_pickle_path = '/home/mor.ventura/trbll_maker/post_eval/post_eval/example_to_analysis_inference_results.pkl'
+            df = pd.read_pickle(new_pickle_path)
+
+        # --- run analysis -----
+        # those params relvant only if run_all = 0 !!!
         compare_params = ['model', 'prompt_type', 'decode_method']
         score_name = 'total_score'
         analysis(df, compare_params, score_name, new_pickle_path, post_eval_path)
