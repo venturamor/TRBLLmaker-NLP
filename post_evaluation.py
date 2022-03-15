@@ -182,17 +182,17 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
                     # TODO: add std
                     std_gk_df = std_gk.to_frame()
 
-                    # concat to analysis df
-                    df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
-                    df_analysis_std = pd.concat([df_analysis_std, std_gk_df], axis=1)
+                    # # concat to analysis df
+                    # df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
+                    # df_analysis_std = pd.concat([df_analysis_std, std_gk_df], axis=1)
 
                     # save pickle
                     curr_pickle_path = os.path.join(post_eval_path, 'analysis_{}_{}.pkl'.format(
-                        score, compare_params[:ind_param + 1]))
+                        score, compare_list[:ind_param + 1]))
                     mean_gk_df.to_pickle(curr_pickle_path)
 
                     curr_std_pickle_path = os.path.join(post_eval_path, 'analysis_std_{}_{}.pkl'.format(
-                        score, compare_params[:ind_param + 1]))
+                        score, compare_list[:ind_param + 1]))
 
                     std_gk_df.to_pickle(curr_std_pickle_path)
 
@@ -215,8 +215,8 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
             std_gk_df = std_gk.to_frame()
 
             # concat to analysis df
-            df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
-            df_analysis_std = pd.concat([df_analysis_std, std_gk_df], axis=1)
+            # df_analysis = pd.concat([df_analysis, mean_gk_df], axis=1)
+            # df_analysis_std = pd.concat([df_analysis_std, std_gk_df], axis=1)
 
             # save pickle
             curr_pickle_path = os.path.join(post_eval_path, 'analysis_{}_{}.pkl'.format(
@@ -236,8 +236,8 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
     doc.save(os.path.join(post_eval_path, 'analysis_{}.docx'.format(score_name)))
 
     # save pickle
-    df_analysis.to_pickle(os.path.join(post_eval_path, 'analysis_{}.pkl'.format(score_name)))
-    df_analysis_std.to_pickle(os.path.join(post_eval_path, 'analysis_std_{}.pkl'.format(score_name)))
+    # df_analysis.to_pickle(os.path.join(post_eval_path, 'analysis_{}.pkl'.format(score_name)))
+    # df_analysis_std.to_pickle(os.path.join(post_eval_path, 'analysis_std_{}.pkl'.format(score_name)))
 
     # save as csv
     df_analysis.to_csv(os.path.join(post_eval_path, 'analysis_{}.csv'.format(score_name)))
@@ -266,6 +266,8 @@ if __name__ == '__main__':
         path_to_predictions = private_args.path.path_to_predictions_before_training
         pickle_list.append(os.path.join(path_to_predictions, 'inference_results.pkl'))
         pickle_names.append('before_training')
+
+
     for pickle_path, curr_name in zip(pickle_list, pickle_names):
         main_path = private_args.path.main_path
         post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name, datetime.datetime.today().strftime('%d%m%y_%H%M'))
