@@ -246,7 +246,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
 
 
 if __name__ == '__main__':
-    state = 0  # [0 - 'eval_before_training', 1 - 'eval_after_training']
+    state = 1  # [0 - 'eval_before_training', 1 - 'eval_after_training']
     run_post_eval = True  # set True for regular running - post_eval + analysis
 
     # path to evaluate pickle
@@ -255,38 +255,42 @@ if __name__ == '__main__':
     results_folder = training_args.path_args.results_path
 
     pickle_list = []
-    pickle_names = []
+    #TODO delete
+    path_to_predictions = private_args.path.path_to_predictions_after_training
+    pickle_list.append(os.path.join(path_to_predictions, 'to_train_trained_model_checkpoint_question_context_with_metadata_bs_32', 'inference_results.pkl'))
+
+    pickle_names = ['question_context_with_metadata_bs_32']
     new_pickle_path_list = []
     if state == 1:
+        #TODO uncommit
         path_to_predictions = private_args.path.path_to_predictions_after_training
         # iterate over folders in path_to_predictions
-        for folder in os.listdir(path_to_predictions):
-            pickle_list.append(os.path.join(path_to_predictions, folder, 'inference_results.pkl'))
-            pickle_names.append(folder)
+        # for folder in os.listdir(path_to_predictions):
+        #     pickle_list.append(os.path.join(path_to_predictions, folder, 'inference_results.pkl'))
+        #     pickle_names.append(folder)
     else: # state 0 - before
         path_to_predictions = private_args.path.path_to_predictions_before_training
         pickle_list.append(os.path.join(path_to_predictions, 'inference_results.pkl'))
         pickle_names.append('before_training')
 
-    if state == 1 and run_post_eval:
-        if run_post_eval:
-            new_pickles_path = '/home/tok/TRBLLmaker/post_eval/'
-            compare_params = ['model', 'prompt_type', 'decode_method']
-            score_name = 'total_score'
-            # iterate over pickles in new_pickles_path that starts with 'example_to_analysis'
-            name_iter = 0
-            for new_pickle_path in os.listdir(new_pickles_path):
-                if new_pickle_path.startswith('example_to_analysis') and new_pickle_path.endswith('.pkl'):
-                    df = pd.read_pickle(new_pickle_path)
-                    main_path = private_args.path.main_path
-                    curr_name = pickle_names[name_iter]
-                    name_iter += 1
-                    post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name)
-                    # if path does not exist, create it
-                    if not os.path.exists(post_eval_path):
-                        os.makedirs(post_eval_path)
-                    analysis(df, compare_params, score_name, new_pickle_path, post_eval_path)
-    else:
+    if state == 1 and not run_post_eval:
+        new_pickles_path = '/home/tok/TRBLLmaker/post_eval/'
+        compare_params = ['model', 'prompt_type', 'decode_method']
+        score_name = 'total_score'
+        # iterate over pickles in new_pickles_path that starts with 'example_to_analysis'
+        for file_path in os.listdir(new_pickles_path):
+            if file_path.startswith('example_to_analysis') and file_path.endswith('.pkl'):
+                new_pickle_path = os.path.join(new_pickles_path, file_path)
+                df = pd.read_pickle(new_pickle_path)
+                main_path = private_args.path.main_path
+                curr_name = file_path.split('example_to_analysis_trained_model_checkpoint_')[1]
+                curr_name = curr_name.split('.')[0]
+                post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name)
+                # if path does not exist, create it
+                if not os.path.exists(post_eval_path):
+                    os.makedirs(post_eval_path)
+                analysis(df, compare_params, score_name, new_pickle_path, post_eval_path)
+    else:  # regular running
         for pickle_path, curr_name in zip(pickle_list, pickle_names):
             main_path = private_args.path.main_path
             post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name)

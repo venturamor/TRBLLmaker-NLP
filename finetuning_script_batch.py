@@ -148,7 +148,7 @@ def generate_txt_for_training(test_path, train_name, eval_name, prompt_type):
 
 
 # Using the model
-def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_samples=10, after_training=False):
+def evaluate_model_on_test_data(model_name, model_path, file_name, prompt_type='None', number_of_samples=10, after_training=False):
     """
     Evaluate model on test samples
     """
@@ -231,7 +231,6 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         for index, (lyrics, meaning, artist, title) in \
                 tqdm(enumerate(zip(fixed_data_list, fixed_label_list, fixed_artist_list, fixed_title_list))):
 
-            prompt_type = training_args.prompt_args.prompt_type
             # Run for each prompt type
             if after_training:
                 prompt_types = [prompt_type]
@@ -451,11 +450,16 @@ def run(state, model_paths = None):
             file_name = "predictions_after_training"
             file_path = os.path.join(main_path, results_path, after_training_folder, file_name)
             number_of_samples = training_args.eval_args.num_samples
-            prompt_type = training_args.prompt_args.prompt_type
+            if 'lyrics_meaning_with_metadata' in model_path:
+                prompt_type = 'lyrics_meaning_with_metadata'
+            elif 'question_context_with_metadata' in model_path:
+                prompt_type = 'question_context_with_metadata'
+            else: # error
+                prompt_type = 'error'
             print("Model: {}".format(model_name))
             print("Model path: {}".format(model_path))
             print("Prompt type: {}".format(prompt_type))
-            evaluate_model_on_test_data(model_name, model_path, file_path, number_of_samples=number_of_samples,
+            evaluate_model_on_test_data(model_name, model_path, file_path,prompt_type=prompt_type, number_of_samples=number_of_samples,
                                         after_training=True)
 
     elif curr_state == "eval_pretrained":
@@ -477,8 +481,9 @@ if __name__ == '__main__':
     # load all folder from path that start with 'trained_model_'
     model_paths = []
     for file in os.listdir(path):
-        if file.startswith("trained_model_"):
+        if file.startswith("to_train_trained_model_"):
             model_paths.append(file)
+
     state = 2
     run(state, model_paths)
 
