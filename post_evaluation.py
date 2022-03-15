@@ -145,7 +145,7 @@ def post_eval(pickle_path, fix_flag=0):
     return df, new_pickle_path
 
 
-def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_name: str,
+def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
              new_pickle_path, post_eval_path, run_all=1):
     """
 
@@ -271,8 +271,7 @@ if __name__ == '__main__':
         df, new_pickle_path = post_eval(pickle_path)
         compare_params = ['model', 'prompt_type', 'decode_method']
         score_name = 'total_score'
-        pickle_name = 'some_name'
-        analysis(df, compare_params, score_name, pickle_name, new_pickle_path, post_eval_path)
+        analysis(df, compare_params, score_name, new_pickle_path, post_eval_path)
 
 # #---------------------------------------------------------------
 # # create a doc file to write the generated prompts
