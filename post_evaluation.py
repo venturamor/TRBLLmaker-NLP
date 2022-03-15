@@ -138,7 +138,7 @@ def post_eval(pickle_path, fix_flag=0):
     df['cos_pred_label'] = cos_pred_label_l
     df['cos_pred_lyrics'] = cos_pred_lyrics_l
     df['total_score'] = total_score_l
-    new_pickle_path = "./example_to_analysis_" + pickle_name + ".pkl"
+    new_pickle_path = "post_eval/post_eval/example_to_analysis_" + pickle_name + ".pkl"
     df.to_pickle(new_pickle_path)
     print('done')
     return df, new_pickle_path
@@ -246,6 +246,7 @@ if __name__ == '__main__':
     before_folder = training_args.path_args.pretraining_folder
     after_folder = training_args.path_args.after_training_folder
     results_folder = training_args.path_args.results_path
+
     pickle_list = []
     pickle_names = []
     if state == 0:
@@ -271,7 +272,6 @@ if __name__ == '__main__':
         score_name = 'total_score'
         pickle_name = 'some_name'
         analysis(df, compare_params, score_name, pickle_name, new_pickle_path, post_eval_path)
-
 
 # #---------------------------------------------------------------
 # # create a doc file to write the generated prompts
