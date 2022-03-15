@@ -1,10 +1,10 @@
 # Mor
 wandb_args:
-  entity: 'tokeron'# 'morventura' #'tokeron' # 'morventura'
-  project_name: "TRBLL_maker"
+  entity: 'tokeron' # 'morventura' #'tokeron' # 'morventura'
+  project_name: "TRBLLmaker" # "TRBLL_maker"
 
 path:
-  main_path: '/home/tok/TRBLL_maker' #/home/mor.ventura/trbll_maker' # path to main folder /home/tok/TRBLL_maker
+  main_path: '/home/tok/TRBLLmaker' #/home/mor.ventura/trbll_maker' # path to main folder /home/tok/TRBLL_maker
   model_path: 'checkpoints'
   path_to_predictions_before_training: '/home/tok/TRBLLmaker/results/pretraining/predictions_before_training/before_training' # '/home/mor.ventura/trbll_maker/results/before_training'
 

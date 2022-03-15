@@ -189,6 +189,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
                     # save pickle
                     curr_pickle_path = os.path.join(post_eval_path, 'analysis_{}_{}.pkl'.format(
                         score, compare_params[:ind_param + 1]))
+
                     mean_gk_df.to_pickle(curr_pickle_path)
 
                     curr_std_pickle_path = os.path.join(post_eval_path, 'analysis_std_{}_{}.pkl'.format(
@@ -247,7 +248,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
 
 if __name__ == '__main__':
     state = 0  # [0 - 'eval_before_training', 1 - 'eval_after_training']
-    run_post_eval = False  # set True for regular running - post_eval + analysis
+    run_post_eval = True  # set True for regular running - post_eval + analysis
 
     # path to evaluate pickle
     before_folder = training_args.path_args.pretraining_folder
@@ -256,6 +257,7 @@ if __name__ == '__main__':
 
     pickle_list = []
     pickle_names = []
+    new_pickle_path_list = []
     if state == 1:
         path_to_predictions = private_args.path.path_to_predictions_after_training
         # iterate over folders in path_to_predictions
@@ -266,25 +268,45 @@ if __name__ == '__main__':
         path_to_predictions = private_args.path.path_to_predictions_before_training
         pickle_list.append(os.path.join(path_to_predictions, 'inference_results.pkl'))
         pickle_names.append('before_training')
-    for pickle_path, curr_name in zip(pickle_list, pickle_names):
-        main_path = private_args.path.main_path
-        post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name)
-        # if path does not exist, create it
-        if not os.path.exists(post_eval_path):
-            os.makedirs(post_eval_path)
 
-        # to run analysis only - please fill new_pickle path!!!!
+    if state == 1 and run_post_eval:
         if run_post_eval:
-            df, new_pickle_path = post_eval(pickle_path)
-        else:
-            new_pickle_path = '/home/mor.ventura/trbll_maker/post_eval/post_eval/example_to_analysis_inference_results.pkl'
-            df = pd.read_pickle(new_pickle_path)
+            new_pickles_path = '/home/tok/TRBLLmaker/post_eval/'
+            compare_params = ['model', 'prompt_type', 'decode_method']
+            score_name = 'total_score'
+            # iterate over pickles in new_pickles_path that starts with 'example_to_analysis'
+            name_iter = 0
+            for new_pickle_path in os.listdir(new_pickles_path):
+                if new_pickle_path.startswith('example_to_analysis') and new_pickle_path.endswith('.pkl'):
+                    df = pd.read_pickle(new_pickle_path)
+                    main_path = private_args.path.main_path
+                    curr_name = pickle_names[name_iter]
+                    name_iter += 1
+                    post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name)
+                    # if path does not exist, create it
+                    if not os.path.exists(post_eval_path):
+                        os.makedirs(post_eval_path)
+                    analysis(df, compare_params, score_name, new_pickle_path, post_eval_path)
+    else:
+        for pickle_path, curr_name in zip(pickle_list, pickle_names):
+            main_path = private_args.path.main_path
+            post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name)
+            # if path does not exist, create it
+            if not os.path.exists(post_eval_path):
+                os.makedirs(post_eval_path)
 
-        # --- run analysis -----
-        # those params relvant only if run_all = 0 !!!
-        compare_params = ['model', 'prompt_type', 'decode_method']
-        score_name = 'total_score'
-        analysis(df, compare_params, score_name, new_pickle_path, post_eval_path)
+            # to run analysis only - please fill new_pickle path!!!!
+            if run_post_eval:
+                df, new_pickle_path = post_eval(pickle_path)
+            else:
+                new_pickle_path = '/home/mor.ventura/trbll_maker/post_eval/post_eval/example_to_analysis_inference_results.pkl'
+                df = pd.read_pickle(new_pickle_path)
+
+            # --- run analysis -----
+            # those params relvant only if run_all = 0 !!!
+            compare_params = ['model', 'prompt_type', 'decode_method']
+            score_name = 'total_score'
+            analysis(df, compare_params, score_name, new_pickle_path, post_eval_path)
 
 # #---------------------------------------------------------------
 # # create a doc file to write the generated prompts

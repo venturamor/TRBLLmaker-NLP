@@ -16,7 +16,7 @@ from config_parser import *
 import matplotlib.pyplot as plt
 
 
-def generate_graphs(df, std_df=None):
+def generate_graphs(df, pickl_path, std_df=None):
     """
     Generate graphs from the dataframe
     """
@@ -40,9 +40,16 @@ def generate_graphs(df, std_df=None):
     # change Legends names
     names = [name for name in df.index.get_level_values(0).unique()]
     ax.legend(loc='upper center', labels=names)
+    # save
+    main_path = private_args.path.main_path
+    plot_path = os.path.join(main_path, 'plots', pickl_path.split('/')[-2])
+    if not os.path.exists(plot_path):
+        os.makedirs(plot_path)
+    if len(df.index.names) > 1:
+        plt.savefig(os.path.join(plot_path, '{}_{}_{}.png'.format(df.keys()[0], df.index.names[0], df.index.names[1])))
+    else:
+        plt.savefig(os.path.join(plot_path, '{}_{}.png'.format(df.keys()[0], df.index.names[0])))
     plt.show()
-
-
     # merge columns with the same name
     # def get_notnull(x): return ';'.join(x[x.notnull()].astype(str))
 
@@ -95,37 +102,41 @@ def combine_before_and_after(pickle_before, pickle_after):
 
 
 if __name__ == '__main__':
-    main_path = private_args.path.main_path
-    eval_path = "post_eval"
-    before_folder = training_args.path_args.pretraining_folder #'before_training'
-    after_folder = training_args.path_args.after_training_folder #'after_training'
+    # main_path = private_args.path.main_path
+    # eval_path = "post_eval"
+    after_folder = '/home/tok/TRBLLmaker/post_eval/post_eval/analysis_results' #training_args.path_args.pretraining_folder #'before_training'
+    before_folder = '/home/tok/TRBLLmaker/post_eval/post_eval/pre_training' #training_args.path_args.after_training_folder #'after_training'
     results_folder = training_args.path_args.results_path
     # Load pickle as a dataframe
-    pickle_name = "predictions_before_training_2022-03-12-17-41-00.pkl"
-    # if pickel name has 'before' in it, load before pickle
-    if 'before' in pickle_name:
-        folder = before_folder
-    else:
-        folder = after_folder
-    pickles_folder = os.path.join(private_args.path.main_path, results_folder, folder)
+    # pickle_name = "predictions_before_training_2022-03-12-17-41-00.pkl"
+    # # if pickel name has 'before' in it, load before pickle
+    # if 'before' in pickle_name:
+    #     folder = before_folder
+    # else:
+    #     folder = after_folder
+    # pickles_folder = os.path.join(private_args.path.main_path, results_folder, folder)
+    #
+    pickles_path = '/home/tok/TRBLLmaker/post_eval/post_eval/pre_training'
 
-    pickle_path = os.path.join(pickles_folder, pickle_name)
-
-    # combine before and after pickles
-    pickle_before = r'/home/tok/TRBLLmaker/results/pretraining/predictions_before_training_2022-03-12-17-41-00.pkl'
-    pickle_after =r'/home/tok/TRBLLmaker/results/after_training/predictions_after_training_2022-03-14-11-17-57.pkl'
-    combine_before_and_after(pickle_before, pickle_after)
+    # # combine before and after pickles
+    # pickle_before = r'/home/tok/TRBLLmaker/results/pretraining/predictions_before_training_2022-03-12-17-41-00.pkl'
+    # pickle_after =r'/home/tok/TRBLLmaker/results/after_training/predictions_after_training_2022-03-14-11-17-57.pkl'
+    # combine_before_and_after(pickle_before, pickle_after)
 
     # pickl_name = "analysis_cos_pred_label_['decode_method', 'model', 'prompt_type']_2022-03-12 19:37:39.523430.pkl"#"full_analysis_120322_1939.pkl" # full_analysis_120322_1937.pkl
-    pickls_path = os.path.join(main_path, eval_path)
-    # iterate over all pickles
-    for pickl_name in os.listdir(pickls_path):
-        if pickl_name.endswith(".pkl") and pickl_name.startswith("analysis"):
-            # load pickle
-            pickl_path = os.path.join(pickls_path, pickl_name)
-            df = pd.read_pickle(pickl_path)
-            # generate graphs
-            generate_graphs(df)
+    # pickls_path = os.path.join(main_path, eval_path)
+    folder_path = '/home/tok/TRBLLmaker/post_eval/post_eval/analysis_results'
+    # iterate over al folders if folder_path
+    for pickles_path in os.listdir(folder_path):
+        # iterate over all pickles in pickle_path
+        for pickle_name in os.listdir(pickles_path):
+            if pickle_name.endswith(".pkl") and pickle_name.startswith("analysis")\
+                    and 'std' not in pickle_name and pickle_name is not 'analysis_total_score.pkl':
+                # load pickle
+                pickl_path = os.path.join(pickles_path, pickle_name)
+                df = pd.read_pickle(pickl_path)
+                #             # generate graphs
+                generate_graphs(df, pickl_path)
 
     # compare between models
     # bar plot for all models and compare all score.
