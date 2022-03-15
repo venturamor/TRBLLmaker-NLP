@@ -255,19 +255,14 @@ if __name__ == '__main__':
     results_folder = training_args.path_args.results_path
 
     pickle_list = []
-    #TODO delete
-    path_to_predictions = private_args.path.path_to_predictions_after_training
-    pickle_list.append(os.path.join(path_to_predictions, 'to_train_trained_model_checkpoint_question_context_with_metadata_bs_32', 'inference_results.pkl'))
-
     pickle_names = ['question_context_with_metadata_bs_32']
     new_pickle_path_list = []
     if state == 1:
-        #TODO uncommit
         path_to_predictions = private_args.path.path_to_predictions_after_training
         # iterate over folders in path_to_predictions
-        # for folder in os.listdir(path_to_predictions):
-        #     pickle_list.append(os.path.join(path_to_predictions, folder, 'inference_results.pkl'))
-        #     pickle_names.append(folder)
+        for folder in os.listdir(path_to_predictions):
+            pickle_list.append(os.path.join(path_to_predictions, folder, 'inference_results.pkl'))
+            pickle_names.append(folder)
     else: # state 0 - before
         path_to_predictions = private_args.path.path_to_predictions_before_training
         pickle_list.append(os.path.join(path_to_predictions, 'inference_results.pkl'))
