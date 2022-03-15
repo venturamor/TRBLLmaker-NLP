@@ -139,7 +139,7 @@ def post_eval(pickle_path, fix_flag=0):
     df['cos_pred_label'] = cos_pred_label_l
     df['cos_pred_lyrics'] = cos_pred_lyrics_l
     df['total_score'] = total_score_l
-    new_pickle_path = "post_eval/post_eval/example_to_analysis_" + pickle_name + ".pkl"
+    new_pickle_path = "post_eval/example_to_analysis_" + pickle_name + ".pkl"
     df.to_pickle(new_pickle_path)
     print('done')
     return df, new_pickle_path
@@ -188,7 +188,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
 
                     # save pickle
                     curr_pickle_path = os.path.join(post_eval_path, 'analysis_{}_{}.pkl'.format(
-                        score_name, compare_params[:ind_param + 1]))
+                        score, compare_params[:ind_param + 1]))
                     mean_gk_df.to_pickle(curr_pickle_path)
 
                     std_gk_df.to_pickle(curr_pickle_path.replace('analysis', 'analysis_std'))
@@ -242,7 +242,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str,
 
 if __name__ == '__main__':
     states = ['eval_before_training', 'eval_after_training']
-    state = 0
+    state = 1
     # path to evaluate pickle
     before_folder = training_args.path_args.pretraining_folder
     after_folder = training_args.path_args.after_training_folder
