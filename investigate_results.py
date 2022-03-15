@@ -97,10 +97,6 @@ if __name__ == '__main__':
     after_folder = training_args.path_args.after_training_folder #'after_training'
     results_folder = training_args.path_args.results_path
     # Load pickle as a dataframe
-    # pickle_name = 'predictions_before_training_2022-03-09-13-45-43.pkl'
-    # pickle_name = 'predictions_before_training_2022-03-10-12-26-46.pkl'
-    # pickle_name = 'predictions_before_training_2022-03-11-13-31-27.pkl'
-    # pickle_name = 'predictions_before_training_2022-03-11-16-41-20.pkl'
     pickle_name = "predictions_before_training_2022-03-12-17-41-00.pkl"
     # if pickel name has 'before' in it, load before pickle
     if 'before' in pickle_name:

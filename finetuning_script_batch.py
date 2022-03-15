@@ -174,8 +174,12 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
     np.random.seed(21)
 
     # Mor - fixed samples to examine
-    number_of_fixed_samples = 10
-    indices = 1158, 2907, 3004, 4004, 6608, 8000, 8009, 10003, 11008, 12005
+    # number_of_fixed_samples = 10
+    number_of_fixed_samples = 30
+    # indices = 1158, 2907, 3004, 4004, 6608, 8000, 8009, 10003, 11008, 12005 #- mor checked
+    indices = [1158, 2907, 3004, 4004, 6608, 8000, 8009, 10003, 11008, 12005,
+    1001, 12003, 3001, 4001, 5001, 6001, 7001, 8001, 9001, 10001, 11001, 12001,
+    1207, 2207, 3207, 4207, 5207, 6207, 7207, 8207, 9207, 10207, 11207, 12207]
     len_indices = len(indices)
     fixed_data_list = []
     fixed_label_list = []
@@ -224,8 +228,6 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         prompt_types_list = []
 
 
-        # for index, (lyrics, meaning, artist, title) in \
-        #         tqdm(enumerate(zip(samples['data'], samples['labels'], samples['artist'], samples['title']))):
         for index, (lyrics, meaning, artist, title) in \
                 tqdm(enumerate(zip(fixed_data_list, fixed_label_list, fixed_artist_list, fixed_title_list))):
 
@@ -249,9 +251,6 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         decode_method_list = []
         for decode_method in decode_methods:
             # Mor
-            # outputs = decode_fn(model=model, tokenizer=tokenizer, input_prompt=input_prompt,
-            #                     decode_method=decode_method, temperature=temperature,
-            #                     num_return_sequences=num_return_sequences, max_input_length=max_input_length)
             outputs = decode_fn_batch(model=model, tokenizer=tokenizer, input_prompt_list=prompted_input_list,
                                       decode_method=decode_method, temperature=temperature,
                                       num_return_sequences=num_return_sequences,
@@ -341,13 +340,22 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
         para.add_run("{} \n\n\n".format(generated)).font.highlight_color \
             = docx.enum.text.WD_COLOR_INDEX.GREEN
 
-    doc.save('{}_{}.docx'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    if 'results/' in model_path:
+        curr_name = model_path.split('results/')[1]
+    else:
+        curr_name = "before_training"
+    output_dir = os.path.join(file_name, curr_name)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    doc.save(os.path.join(output_dir, "inference_results.docx"))
     # save df as pickle
-    df_inference.to_pickle('{}_{}.pkl'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
-    print("Saved {}_{}.pkl".format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    df_inference.to_pickle(os.path.join(output_dir, "inference_results.pkl"))
+    print("Saved inference results to {}".format(output_dir))
     # Save to csv file
-    df_inference.to_csv('{}_{}.csv'.format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
-    print("Saved {}_{}.csv".format(file_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    df_inference.to_csv(os.path.join(output_dir, "inference_results.csv"))
+    print("Saved inference results to {}".format(output_dir))
     print("Done")
 
 
@@ -378,9 +386,7 @@ def evaluate_model_on_test_data(model_name, model_path, file_name, number_of_sam
 #
 # print("Generating prompts...")
 
-if __name__ == '__main__':
-    states = ["prepare_data", "train", "eval", "eval_pretrained"]
-    state = 2
+def run(state, model_paths = None):
     # state = training_args.train_args.state
     curr_state = states[state]
     main_path = private_args.path.main_path
@@ -433,22 +439,24 @@ if __name__ == '__main__':
 
     if curr_state == "eval":
         print("evaluating...")
-        model_path = private_args.path.model_path
-        output_dir = training_args.path_args.output_dir
-        model_path = os.path.join(main_path, output_dir, model_path)
-        model_name = training_args.train_args.model_name
-        # Evaluate model on test data - this will take a while
-        results_path = training_args.path_args.results_path
-        after_training_folder = training_args.path_args.after_training_folder
-        file_name = "predictions_after_training"
-        file_path = os.path.join(main_path, results_path, after_training_folder, file_name)
-        number_of_samples = training_args.eval_args.num_samples
-        prompt_type = training_args.prompt_args.prompt_type
-        print("Model: {}".format(model_name))
-        print("Model path: {}".format(model_path))
-        print("Prompt type: {}".format(prompt_type))
-        evaluate_model_on_test_data(model_name, model_path, file_path, number_of_samples=number_of_samples,
-                                    after_training=True)
+        if model_paths is None:
+            model_paths = [private_args.path.model_path]
+        for model_path in model_paths:
+            output_dir = training_args.path_args.output_dir
+            model_path = os.path.join(main_path, output_dir, model_path)
+            model_name = training_args.train_args.model_name
+            # Evaluate model on test data - this will take a while
+            results_path = training_args.path_args.results_path
+            after_training_folder = training_args.path_args.after_training_folder
+            file_name = "predictions_after_training"
+            file_path = os.path.join(main_path, results_path, after_training_folder, file_name)
+            number_of_samples = training_args.eval_args.num_samples
+            prompt_type = training_args.prompt_args.prompt_type
+            print("Model: {}".format(model_name))
+            print("Model path: {}".format(model_path))
+            print("Prompt type: {}".format(prompt_type))
+            evaluate_model_on_test_data(model_name, model_path, file_path, number_of_samples=number_of_samples,
+                                        after_training=True)
 
     elif curr_state == "eval_pretrained":
         print("evaluating pretrained model...")
@@ -460,6 +468,19 @@ if __name__ == '__main__':
         file_path = os.path.join(main_path, results_path, pretraining_folder, file_name)
         evaluate_model_on_test_data("", "", file_path, number_of_samples=1,
                                     after_training=False)
+
+if __name__ == '__main__':
+    states = ["prepare_data", "train", "eval", "eval_pretrained"]
+    main_path = private_args.path.main_path
+    results_path = training_args.path_args.results_path
+    path = os.path.join(main_path, results_path)
+    # load all folder from path that start with 'trained_model_'
+    model_paths = []
+    for file in os.listdir(path):
+        if file.startswith("trained_model_"):
+            model_paths.append(file)
+    state = 2
+    run(state, model_paths)
 
 #####
 # from itertools import chain
