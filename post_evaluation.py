@@ -240,35 +240,37 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
 
 
 if __name__ == '__main__':
+    states = ['eval_before_training', 'eval_after_training']
+    state = 1
     # path to evaluate pickle
     before_folder = training_args.path_args.pretraining_folder
     after_folder = training_args.path_args.after_training_folder
     results_folder = training_args.path_args.results_path
-
-    # Load pickle as a dataframe
-    pickle_name = 'predictions_after_training_2022-03-14-11-17-57.pkl'
-    # if pickel name has 'before' in it, load before pickle
-    if 'before' in pickle_name:
-        folder = before_folder
+    pickle_list = []
+    pickle_names = []
+    if state == 0:
+        path_to_predictions = private_args.path_args.path_to_predictions_before_training
+        # iterate over folders in path_to_predictions
+        for folder in os.listdir(path_to_predictions):
+            pickle_list.append(os.path.join(path_to_predictions, folder, 'inference_results.pkl'))
+            pickle_names.append(folder)
     else:
-        folder = after_folder
-    pickles_folder = os.path.join(private_args.path.main_path, results_folder, folder)
+        path_to_predictions = private_args.path_args.path_to_predictions_after_training
+        pickle_list.append(os.path.join(path_to_predictions, 'inference_results.pkl'))
+        pickle_names.append('before_training')
+    for pickle_path, curr_name in zip(pickle_list, pickle_names):
+        main_path = private_args.path.main_path
+        post_eval_path = os.path.join(main_path, 'post_eval', curr_name)
 
-    curr_name = pickle_name.split('.')[0]
-    main_path = private_args.path.main_path
-    post_eval_path = os.path.join(main_path, 'post_eval', curr_name)
+        # if path does not exist, create it
+        if not os.path.exists(post_eval_path):
+            os.makedirs(post_eval_path)
 
-    # if path does not exist, create it
-    if not os.path.exists(post_eval_path):
-        os.makedirs(post_eval_path)
-
-    pickle_path = os.path.join(pickles_folder, pickle_name)
-    # df = pd.read_pickle(pickle_path)
-
-    df, new_pickle_path = post_eval(pickle_path)
-    compare_params = ['model', 'prompt_type', 'decode_method']
-    score_name = 'total_score'
-    analysis(df, compare_params, score_name, pickle_name, new_pickle_path, post_eval_path)
+        df, new_pickle_path = post_eval(pickle_path)
+        compare_params = ['model', 'prompt_type', 'decode_method']
+        score_name = 'total_score'
+        pickle_name = 'some_name'
+        analysis(df, compare_params, score_name, pickle_name, new_pickle_path, post_eval_path)
 
 
 # #---------------------------------------------------------------
