@@ -105,7 +105,8 @@ def fix_columns(df):
 def post_eval(pickle_path, fix_flag=0):
     # Load pickle as a dataframe
     df = pd.read_pickle(pickle_path)
-    pickle_name = os.path.split(pickle_path)[1]
+    # pickle_name = os.path.split(pickle_path)[1]
+    pickle_name = pickle_path.split('/')[-2] + datetime.datetime.today().strftime('_%d%m%y_%H%M')
 
     if fix_flag:
         df = fix_columns(df)
@@ -241,7 +242,7 @@ def analysis(df: pd.DataFrame, compare_params: list, score_name: str, pickle_nam
 
 if __name__ == '__main__':
     states = ['eval_before_training', 'eval_after_training']
-    state = 1
+    state = 0
     # path to evaluate pickle
     before_folder = training_args.path_args.pretraining_folder
     after_folder = training_args.path_args.after_training_folder
@@ -249,14 +250,14 @@ if __name__ == '__main__':
 
     pickle_list = []
     pickle_names = []
-    if state == 0:
-        path_to_predictions = private_args.path_args.path_to_predictions_before_training
+    if state == 1:
+        path_to_predictions = private_args.path.path_to_predictions_after_training
         # iterate over folders in path_to_predictions
         for folder in os.listdir(path_to_predictions):
             pickle_list.append(os.path.join(path_to_predictions, folder, 'inference_results.pkl'))
             pickle_names.append(folder)
     else:
-        path_to_predictions = private_args.path_args.path_to_predictions_after_training
+        path_to_predictions = private_args.path.path_to_predictions_before_training
         pickle_list.append(os.path.join(path_to_predictions, 'inference_results.pkl'))
         pickle_names.append('before_training')
     for pickle_path, curr_name in zip(pickle_list, pickle_names):

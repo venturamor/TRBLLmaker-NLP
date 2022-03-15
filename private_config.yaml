@@ -1,13 +1,14 @@
 # Mor
 wandb_args:
-  entity: 'tokeron' # 'morventura'
+  entity: 'morventura' #'tokeron' # 'morventura'
   project_name: "TRBLL_maker"
 
 path:
-  main_path: '/home/tok/TRBLLmaker' #'/home/student/mor_nlp' # path to main folder /home/tok/TRBLL_maker
-  model_path: 'checkpoint_lyrics_meaning_with_metadata_2'
-  path_to_predictions_before_training: '/home/tok/TRBLLmaker/results/after_training/predictions_after_training/'
-  path_to_predictions_after_training: '/home/tok/TRBLLmaker/results/pretraining/predictions_before_training/before_training/'
+  main_path: '/home/mor.ventura/trbll_maker' # path to main folder /home/tok/TRBLL_maker
+  model_path: 'checkpoints'
+  path_to_predictions_before_training: '/home/mor.ventura/trbll_maker/results/before_training' # '/home/tok/TRBLLmaker/results/pretraining/predictions_before_training/before_training
+
+  path_to_predictions_after_training: '/home/mor.ventura/trbll_maker/results/after_training' #'/home/tok/TRBLLmaker/results/after_training/predictions_after_training/'
 
 #name:
 #  train_name: 'train_tmp'
