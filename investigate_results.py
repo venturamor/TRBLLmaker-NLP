@@ -16,11 +16,15 @@ from config_parser import *
 import matplotlib.pyplot as plt
 
 
-def generate_graphs(df):
+def generate_graphs(df, std_df=None):
     """
     Generate graphs from the dataframe
     """
     df_unstacked = df.unstack(level=0)
+    # with err bars - yerr - need to take from std
+    if std_df!=None:
+        ax = df_unstacked.plot(kind='bar', rot=0, figsize=(9, 7), layout=(2, 3), yerr=0.25)
+
     ax = df_unstacked.plot(kind='bar', rot=0, figsize=(9, 7), layout=(2, 3))
     # set x-axis as df.index.names[1]
     if len(df.index.names) > 1:

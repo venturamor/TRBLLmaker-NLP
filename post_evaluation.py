@@ -138,7 +138,7 @@ def post_eval(pickle_path, fix_flag=0):
     df['cos_pred_label'] = cos_pred_label_l
     df['cos_pred_lyrics'] = cos_pred_lyrics_l
     df['total_score'] = total_score_l
-    new_pickle_path = "./example_to_analysis_" + pickle_name + ".pkl"
+    new_pickle_path = "post_eval/post_eval/example_to_analysis_" + pickle_name + ".pkl"
     df.to_pickle(new_pickle_path)
     print('done')
     return df, new_pickle_path
@@ -246,7 +246,8 @@ if __name__ == '__main__':
     results_folder = training_args.path_args.results_path
 
     # Load pickle as a dataframe
-    pickle_name = 'predictions_after_training_2022-03-14-11-17-57.pkl'
+    # pickle_name = 'predictions_after_training_2022-03-14-11-17-57.pkl'
+    pickle_name = 'inference_results.pkl'
     # if pickel name has 'before' in it, load before pickle
     if 'before' in pickle_name:
         folder = before_folder
@@ -254,15 +255,16 @@ if __name__ == '__main__':
         folder = after_folder
     pickles_folder = os.path.join(private_args.path.main_path, results_folder, folder)
 
-    curr_name = pickle_name.split('.')[0]
+    curr_name = pickle_name.split('.')[0] + datetime.datetime.today().strftime('%d%m%y_%H%M')
     main_path = private_args.path.main_path
-    post_eval_path = os.path.join(main_path, 'post_eval', curr_name)
+    post_eval_path = os.path.join(main_path, 'post_eval', 'analysis_results', curr_name)
 
     # if path does not exist, create it
     if not os.path.exists(post_eval_path):
         os.makedirs(post_eval_path)
 
-    pickle_path = os.path.join(pickles_folder, pickle_name)
+    pickle_path = os.path.join(pickle_name)
+    # pickle_path = os.path.join(pickles_folder, pickle_name)
     # df = pd.read_pickle(pickle_path)
 
     df, new_pickle_path = post_eval(pickle_path)
